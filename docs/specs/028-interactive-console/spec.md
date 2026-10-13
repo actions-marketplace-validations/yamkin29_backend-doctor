@@ -1,6 +1,7 @@
 # Spec 028 — Interactive console (F028)
 
-- **Status:** Draft — pending review; no implementation authorized
+- **Status:** Approved — implementation authorized
+- **Approved:** 2026-10-13; OQ-1..3 accepted by the user
 - **Created:** 2026-10-13
 - **Phase:** 6 — Quality and release
 - **Depends on:** F003, F016, F017, F021, F023, F026 (Done)
@@ -276,5 +277,6 @@ terminal background palette or decorative animation. No bitmap assets are needed
    **Recommendation: yes.** Existing skill installation does not implement agent
    launch; approval of this console does not silently add that behavior.
 
-These decisions and the specification require user approval before design/tasks
-and implementation. Website creation remains deferred as requested.
+All three recommendations were approved on 2026-10-13. Website creation remains
+deferred as requested. The dependency choice, local score and clipboard-only
+handoff are authorized; automatic CLI-agent launch remains separate.
