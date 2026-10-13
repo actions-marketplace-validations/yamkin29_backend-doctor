@@ -4,7 +4,7 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
 
 - [x] **T0. Approval and implementation drafts.** Record approval, design/test map,
   roadmap status. No TDD — documentation only. Run required checks and commit.
-- [ ] **T1. Console data/content and approved dependencies (AC-6/7/9/10/11/12/14/15/19/20).**
+- [x] **T1. Console data/content and approved dependencies (AC-6/7/9/10/11/12/14/15/19/20).**
   RED: groups, score/coverage, shipped docs/runtime guidance, excerpt boundaries,
   prompt scope/quoting and controls. GREEN: pure view/content/prompt modules and
   dependency/config setup (No TDD for dependency declarations). REFACTOR: share
@@ -29,3 +29,6 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
 - None at initialization. No automatic AI-agent launch or website is in scope.
 - Draft baseline: 776 tests pass; HTTP/runtime tests require a local-listen capable
   execution environment (the sandbox otherwise returns listen EPERM).
+- T1: 19 new tests failed on absent modules before implementation, then passed.
+  All 41 registered rule documents have Problem/Good guidance. GitHub API verified
+  the repository is public with default branch main; links can use those paths.
