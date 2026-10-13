@@ -21,6 +21,28 @@ Repo: <https://github.com/millionco/react-doctor> · Docs: <https://www.react.do
 
 ## Our own durable findings
 
+### Interactive console reference (spec 028 draft, 2026-10-13)
+
+- React Doctor 0.9.18 was exercised in a standalone React/Vite fixture and a
+  real WebStorm Local terminal. The result menu leads to a category/rule issue
+  browser with occurrence counts, code excerpts, guidance and keyboard hints.
+- Enter inside issue review copies a repair prompt for the selected rule group,
+  including affected locations and a verification command. It does not copy the
+  source excerpt, launch an agent or apply fixes. Whole-report handoff is a
+  separate action.
+- A short terminal may omit the detail pane. Backend Doctor's proposed compact
+  layout must provide a reachable detail view instead of making Enter double as
+  both detail selection and copying.
+- React Doctor's numerical score uses a remote service; `--no-telemetry` also
+  disables scoring. Our constitution requires any proposed score to be local
+  and deterministic. A score cannot stand in for coverage/skip reporting.
+- Our registry has title/docs metadata but no recommendation field; shipped
+  Markdown provides explanations and examples. Runtime report-level ids are not
+  registered rules and need explicit guidance/documentation handling.
+- Ink was excluded from the original stack for the simpler MVP surface. Spec
+  028 proposes reconsidering it for the user-requested interactive console;
+  dependency approval and Node >=20 packaging proof are still pending.
+
 ### jiti v2 (config loading) — virtual `default`
 
 Under interop, a module **without** a default export exposes a *virtual*
