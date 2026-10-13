@@ -1,6 +1,7 @@
 # Spec 028 — Interactive console (F028)
 
-- **Status:** Approved — implementation authorized
+- **Status:** Implemented
+- **Implemented:** 2026-10-13; tasks and verification recorded in tasks.md
 - **Approved:** 2026-10-13; OQ-1..3 accepted by the user
 - **Created:** 2026-10-13
 - **Phase:** 6 — Quality and release
@@ -18,7 +19,7 @@ a focused repair task for an AI assistant. The user inspected React Doctor 0.9.1
 live and requested the same core experience for Backend Doctor, with its own
 identity and documentation.
 
-## Verified facts and references
+## Verified baseline facts and references (before implementation)
 
 - `src/cli/commands/scan.ts` loads configuration/scope/trace, calls `runScan`,
   builds a report, renders a reporter, and returns `exitCodeFor(doc)`.

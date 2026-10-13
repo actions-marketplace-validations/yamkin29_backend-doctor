@@ -17,11 +17,11 @@ Repo: <https://github.com/millionco/react-doctor> · Docs: <https://www.react.do
 | CI | `ci install` writes workflow + composite action; diff scope via merge-base; sticky PR comment + inline review comments (cap 50) + commit status; `blocking: none` default | Planned F015/F016 verbatim in spirit | react.doctor/docs/ci-and-prs/github-actions-setup, `action.yml` |
 | Agent integration | `skills/<name>/SKILL.md` (frontmatter name/description, "run after edits, scope changed"); `--format jsonl` | Planned F017 | react.doctor/docs/getting-started/install-for-coding-agents |
 | Runtime engine | `scan <url>` records a Chrome DevTools trace via playwright-core; purple outlines on renders; traces local-only, flagged sensitive | Our Phase 5 analog: `probe -- <start command>` with `--require` hook, `perf_hooks.monitorEventLoopDelay` + `async_hooks` | repo `packages/core/package.json`, docs |
-| Stack | oxlint plugin + oxc-parser, jiti for config loading, effect, commander, ink | We use ts-morph behind `ParserAdapter` (Engine v2 may migrate to oxc); jiti adopted for config; commander adopted; ink rejected (boring surface) | repo `packages/*/package.json` |
+| Stack | oxlint plugin + oxc-parser, jiti for config loading, effect, commander, ink | We use ts-morph behind `ParserAdapter` (Engine v2 may migrate to oxc); jiti and commander adopted; Ink adopted for the approved optional console in spec 028 | repo `packages/*/package.json` |
 
 ## Our own durable findings
 
-### Interactive console reference (spec 028 draft, 2026-10-13)
+### Interactive console (spec 028, 2026-10-13)
 
 - React Doctor 0.9.18 was exercised in a standalone React/Vite fixture and a
   real WebStorm Local terminal. The result menu leads to a category/rule issue
@@ -30,18 +30,33 @@ Repo: <https://github.com/millionco/react-doctor> · Docs: <https://www.react.do
   including affected locations and a verification command. It does not copy the
   source excerpt, launch an agent or apply fixes. Whole-report handoff is a
   separate action.
-- A short terminal may omit the detail pane. Backend Doctor's proposed compact
-  layout must provide a reachable detail view instead of making Enter double as
-  both detail selection and copying.
+- A short terminal may omit the detail pane. Backend Doctor's compact layout
+  provides a scrollable `d` detail view; Enter copies and `s` exposes coverage.
 - React Doctor's numerical score uses a remote service; `--no-telemetry` also
   disables scoring. Our constitution requires any proposed score to be local
   and deterministic. A score cannot stand in for coverage/skip reporting.
 - Our registry has title/docs metadata but no recommendation field; shipped
   Markdown provides explanations and examples. Runtime report-level ids are not
   registered rules and need explicit guidance/documentation handling.
-- Ink was excluded from the original stack for the simpler MVP surface. Spec
-  028 proposes reconsidering it for the user-requested interactive console;
-  dependency approval and Node >=20 packaging proof are still pending.
+- The user approved Ink 6.0.1 / React 19.1.0 / @types/react 19.1.5. Ink 7 is not
+  compatible with the declared Node 20 floor. Keep Ink and React external so Yoga
+  WASM/assets resolve from the actual dependency; build a separate console entry
+  and load it with a computed URL only after terminal activation.
+- The installed tarball was exercised under Node 20.20.2 in real PTYs on macOS:
+  clean/error/empty/skipped/partial/combined reports, details/local docs, small
+  layouts, native clipboard, workflow guard, UI-loader fallback and SIGINT/SIGTERM.
+  WebStorm Local was also inspected live. Its MCP command tool provides a pipe,
+  so use a normal Local terminal for interactive testing.
+- Ink's Chalk version can emit colors despite NO_COLOR, including when color is
+  forced. The console Text wrapper explicitly disables styling in that case.
+  A subprocess regression test initializes Ink with NO_COLOR + FORCE_COLOR and
+  checks for absent SGR escapes; a pipe-only test would miss the bug.
+- cli-cursor initializes one process-lifetime signal-exit hook. Warm it once when
+  measuring session listener cleanup; subsequent sessions must not accumulate
+  hooks. Restore raw input/cursor and remove session input/resize/signal listeners.
+- Clipboard smoke should preserve and restore the previous pasteboard. macOS
+  pbcopy/pbpaste need execution outside the filesystem sandbox; Linux/Windows
+  command selection, missing tools, timeout and stdin errors are adapter-tested.
 
 ### jiti v2 (config loading) — virtual `default`
 

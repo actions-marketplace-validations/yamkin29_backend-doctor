@@ -94,7 +94,7 @@ projects[] }`.
 | F024 | Agent skill installer (`backend-doctor install`) | 4 | Done |
 | F026 | Audit remediation (A01–A05 and coverage/exit-code clarity; [spec](./specs/026-audit-remediation/spec.md), [design](./specs/026-audit-remediation/design.md), [verification](./specs/026-audit-remediation/tasks.md)) | 6 | Done |
 | F027 | Prisma 7 standard generated-client loader ([spec 027](./specs/027-prisma-generated-client-loader/spec.md); separately requested) | 5 | Draft spec |
-| F028 | Interactive console: progress, grouped issue browser, code details, copyable AI context, documentation links, local score and GitHub Actions setup ([spec 028](./specs/028-interactive-console/spec.md)) | 6 | In progress |
+| F028 | Interactive console: progress, grouped issue browser, code details, copyable AI context, documentation links, local score and GitHub Actions setup ([spec 028](./specs/028-interactive-console/spec.md)) | 6 | Done |
 
 Spec 025 remains an unapproved GitBot integration draft; F025 is not yet added
 to this roadmap.

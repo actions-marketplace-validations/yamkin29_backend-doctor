@@ -1,6 +1,6 @@
 # Design 028 — Interactive console
 
-Status: implementation draft; spec and OQ-1..3 approved 2026-10-13.
+Status: implemented; spec and OQ-1..3 approved 2026-10-13.
 
 ## Module layout
 
@@ -62,6 +62,8 @@ Status: implementation draft; spec and OQ-1..3 approved 2026-10-13.
     Always display local documentation; no placeholder website URL. ANSI colors
     have semantic roles; NO_COLOR retains symbols/text. Background/font belong
     to the terminal. The approved live React Doctor reference owns hierarchy.
+    A local Text wrapper disables Ink styles for NO_COLOR, even if FORCE_COLOR
+    is also present; Ink's Chalk does not enforce that contract itself.
 
 ## Dependencies
 
@@ -87,7 +89,7 @@ Verify an installed tarball with an isolated Node 20 runtime before close-out.
 | 12 | full prompt coverage/skip tests and result action integration |
 | 13 | clipboard adapter success/missing/failure/timeout tests; manual-copy UI |
 | 14 | centralized URLs/local docs tests; plain-link renderer integration |
-| 15 | control escaping model/content/prompt and rendered output tests |
+| 15 | control escaping model/content/prompt/rendered output; forced-color subprocess NO_COLOR regression |
 | 16 | CI confirmation/cancel unit/UI integration plus existing-workflow protection |
 | 17 | session success/failure/cleanup tests; live PTY verdicts/signals |
 | 18 | progress observer report equality; existing JSON/JSONL golden/eval suite |

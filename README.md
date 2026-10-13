@@ -25,7 +25,8 @@ architecture drift.
 npx backend-doctor-cli@latest scan
 ```
 
-That scans the current directory and prints a pretty report. Exit code `0`
+That scans the current directory and opens the console in a supported terminal;
+pipes and CI receive a regular pretty report. Exit code `0`
 means no `error`-severity findings; warnings and skipped checks can still exist.
 `1` means findings at `error` severity, `2` means a usage or
 configuration problem (bad flag, unreadable backend-doctor config) — not a crash.
@@ -60,7 +61,49 @@ Useful scan flags:
 --ignore "<glob>"      # exclude files, repeatable
 --config <path>        # load exactly this config, skip discovery
 --trace <dir>          # merge runtime findings from a probe session
+--interactive          # require the console; incompatible with CI/JSON/dump-config
+--no-interactive       # print the regular report, including in a terminal
 ```
+
+## Interactive console
+
+The console shows scan stages, severity counts, grouped findings and a local
+findings score. Choose **Review issues** with Enter, then use these keys:
+
+| Key | Action |
+|-----|--------|
+| ↑ / ↓ | Select a problem group; scroll in details/coverage/manual copy |
+| ← / → | Visit every occurrence of the selected problem |
+| Enter | Copy a repair task for all occurrences of the selected group |
+| `d` | Open full details, source excerpt, explanation, fix and documentation |
+| `s` | Inspect scope, frameworks, analyzed files and every skipped check |
+| Esc | Return to the previous view |
+| `q` | Exit with the scan's normal verdict |
+| Ctrl+C | Interrupt and restore the terminal |
+
+The result menu can also copy a task for the whole report or set up GitHub Actions.
+Workflow setup displays the destination in the scanned package and requires `y`
+confirmation; existing workflows are protected. Scanning and copying do not edit
+application files or launch an AI assistant. Paste the copied task into your
+assistant; it includes locations, guidance, coverage and a command to verify fixes.
+
+Rule documentation ships locally and links to this repository on GitHub. Runtime
+findings link to the runtime section below. There is no separate website yet.
+Long details remain scrollable in narrow or short terminals. `NO_COLOR` disables
+styling while keeping severity symbols and text.
+
+The **Findings score (local heuristic)** is `max(0, 100 - 10 × E - 2 × W)`, where
+`E` and `W` count error and warning groups, not repeated occurrences. Labels are
+Good (90–100), Needs attention (70–89), and Critical (0–69). It makes no network
+requests and is unavailable for partial scans, skipped checks or zero analyzed
+files. A high score is not a claim that the application is healthy.
+
+Clipboard tools: macOS `pbcopy`, Windows `clip`, Linux `wl-copy`, `xclip` or `xsel`.
+Missing tools, unavailable clipboard sessions and failed copies open a scrollable
+manual-copy view. Copy failures and workflow errors do not change the scan verdict.
+The console needs TTY input/output, raw input and a usable `TERM`; explicit
+`--interactive` rejects unsupported environments with exit `2`. Use
+`--no-interactive`, `--format json` or `--format jsonl` for automation.
 
 ## Configuration
 

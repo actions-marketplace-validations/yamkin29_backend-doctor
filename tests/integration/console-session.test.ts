@@ -2,13 +2,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { startConsole } from "../../src/cli/console/session.js";
 import { diagnostic, report } from "../helpers/console.js";
 
 const disposers: Array<() => void> = [];
 afterEach(() => {
 	for (const dispose of disposers.splice(0)) dispose();
+	vi.unstubAllEnvs();
 });
 const tick = () => new Promise<void>((r) => setTimeout(r, 60));
 function terminal(rows = 30, columns = 100) {
@@ -46,6 +47,31 @@ function terminal(rows = 30, columns = 100) {
 		},
 	};
 }
+it("honors NO_COLOR while preserving severity symbols and readable content", async () => {
+	vi.stubEnv("NO_COLOR", "1");
+	const tty = terminal();
+	const session = startConsole({
+		target: "/project",
+		scanOptions: {},
+		streams: tty,
+		debug: true,
+	});
+	disposers.push(session.dispose);
+	const done = session.present(
+		report({
+			diagnostics: [diagnostic({ message: "payload\u001b]52;c;bad\u0007" })],
+		}),
+	);
+	await tick();
+	await tty.key("\r");
+	expect(tty.read()).toContain("⚠ Security");
+	expect(tty.read()).toContain("payload\\u001b]52;c;bad\\u0007");
+	expect(tty.read()).not.toContain("\u001b]52");
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: Assert that ANSI style escapes are absent.
+	expect(tty.read()).not.toMatch(/\u001b\[[\d;]*m/);
+	await tty.key("q");
+	await done;
+});
 it("renders progress, navigates groups/sites, copies all sites and restores the terminal", async () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "doctor-console-ui-"));
 	try {

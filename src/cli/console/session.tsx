@@ -1,6 +1,13 @@
 import path from "node:path";
-import { Box, render, Text, useInput, useStdout } from "ink";
-import { Component, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Box, Text as InkText, render, useInput, useStdout } from "ink";
+import {
+	Component,
+	type ComponentProps,
+	type ReactNode,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import type { ReportDocument } from "../../core/types.js";
 import { workflowAction, workflowDestination } from "./actions.js";
 import { type ClipboardResult, copyToClipboard } from "./clipboard.js";
@@ -30,6 +37,27 @@ export interface ConsoleSession {
 	stage(text: string): void;
 	present(doc: ReportDocument): Promise<void>;
 	dispose(): void;
+}
+
+/** Ink's Chalk version does not implement NO_COLOR; keep this promise locally. */
+function Text(props: ComponentProps<typeof InkText>) {
+	return (
+		<InkText
+			{...props}
+			{...(process.env.NO_COLOR !== undefined
+				? {
+						color: undefined,
+						backgroundColor: undefined,
+						bold: false,
+						dimColor: false,
+						italic: false,
+						underline: false,
+						strikethrough: false,
+						inverse: false,
+					}
+				: {})}
+		/>
+	);
 }
 
 class Boundary extends Component<

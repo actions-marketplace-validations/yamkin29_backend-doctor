@@ -18,7 +18,7 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
   actual CLI opt-out/machine format tests and tarball entry pin. GREEN: separate
   renderer entry, lazy loader and scan/session integration. REFACTOR: compact
   layouts, no derived-state effects, bounded scroll; full checks; commit.
-- [ ] **T4. Close-out and real smoke (all AC).** Verify built and installed-tarball
+- [x] **T4. Close-out and real smoke (all AC).** Verify built and installed-tarball
   CLI in PTYs and Node 20; good/bad/zero/partial/combined reports, actual clipboard,
   documentation destinations, workflow guard, signals and UI fallback. Document
   commands/keys/score; update tasks, research, spec → Implemented, roadmap → Done.
@@ -43,3 +43,19 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
   Ink's cli-cursor dependency initializes one process-lifetime exit hook; session
   signal/input/resize listeners are removed and repeated sessions do not add hooks.
   A live PTY confirmed results/review screens and successful q exit.
+- T4: installed npm tarball on Node 20.20.2 passed 14 real macOS PTY cases:
+  review/docs, clean, error (exit 1), zero coverage, skipped reads, partial scope,
+  combined runtime, 60×8 layout, SIGINT/SIGTERM, workflow creation/protection,
+  renderer-loader failure and native clipboard. Normal exits restore canonical
+  input and cursor; signal exits keep their signal verdict. The copied task was
+  read back with pbpaste and the previous pasteboard was restored. GitHub's main
+  tree contains all 41 rule documents. WebStorm Local review was inspected live.
+- T4 finding/fix: installed PTY smoke exposed Ink styling despite NO_COLOR.
+  A subprocess regression went red before a local Text wrapper made it green.
+  The extra fake-stream NO_COLOR/escaped-control case is characterization; it
+  alone could not reproduce the dependency's color initialization behavior.
+  README documents keys/activation/score/clipboard. No Windows/Linux live host
+  was available; their platform-tool behaviors are covered through adapters.
+- Final verification: 817 tests pass in 85 files; TypeScript noEmit, Biome format,
+  lint and git diff --check pass. CLI/report/config/public-export contracts remain
+  covered by the existing regression suite.
