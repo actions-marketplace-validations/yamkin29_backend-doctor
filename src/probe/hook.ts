@@ -821,8 +821,7 @@ function installDbCollector(
 					if (typeof this.$use === "function") {
 						this.$use((params, next) => observe(params, () => next(params)));
 					} else if (typeof this.$extends === "function") {
-						// biome-ignore lint/correctness/noConstructorReturn: The verified public Prisma API returns an extended client proxy; subclass methods and transactions are tested with a real client.
-						return this.$extends({
+						const extended = this.$extends({
 							name: "backend-doctor-probe",
 							query: {
 								$allOperations: ({
@@ -834,6 +833,16 @@ function installDbCollector(
 									observe({ model, action: operation.replace(/^\$/, "") }, () =>
 										query(queryArgs),
 									),
+							},
+						});
+						// Prisma hides $on on extensions with a non-configurable property.
+						// Use the native client as the target to retain that public API.
+						// biome-ignore lint/correctness/noConstructorReturn: The native-target proxy preserves subclass initialization and public Prisma APIs, verified with a real client.
+						return new Proxy(this, {
+							get(target, key, receiver) {
+								return key === "$on"
+									? Reflect.get(target, key, receiver)
+									: Reflect.get(extended, key, extended);
 							},
 						});
 					} else {

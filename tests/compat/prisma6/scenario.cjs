@@ -4,8 +4,9 @@ const http = require("node:http");
 module.exports = async function scenario(PrismaClient) {
 	class PrismaService extends PrismaClient {
 		ready = false;
+		#greeting = "subclass-method";
 		hello() {
-			return "subclass-method";
+			return this.#greeting;
 		}
 		async onModuleInit() {
 			await this.$connect();
@@ -18,10 +19,20 @@ module.exports = async function scenario(PrismaClient) {
 	}
 	const client = new PrismaService({
 		datasourceUrl: process.env.PRISMA_PROOF_DB,
+		log: [{ emit: "event", level: "query" }],
 	});
 	let server;
 	try {
 		assert.equal(client.hello(), "subclass-method");
+		let nativeQueryEvents = 0;
+		assert.equal(
+			typeof client.$on,
+			"function",
+			"native event subscription API must survive instrumentation",
+		);
+		client.$on("query", () => {
+			nativeQueryEvents++;
+		});
 		await client.onModuleInit();
 		assert.equal(client.ready, true);
 		await client.$executeRawUnsafe(
@@ -50,7 +61,7 @@ module.exports = async function scenario(PrismaClient) {
 			const extended = client.$extends({
 				client: {
 					appHello() {
-						return this.hello();
+						return client.hello();
 					},
 				},
 				query: {
@@ -100,6 +111,10 @@ module.exports = async function scenario(PrismaClient) {
 		);
 		assert.equal(await response.text(), "host-behavior-preserved");
 		assert.equal(response.status, 200);
+		assert.ok(
+			nativeQueryEvents > 0,
+			"native query-event subscribers still receive events",
+		);
 		console.log("prisma6-runtime-ok");
 	} finally {
 		if (server) {

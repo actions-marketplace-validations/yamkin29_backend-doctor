@@ -56,6 +56,24 @@
   generated export copies. The new-loader scope for Prisma 7 remains deferred.
   Pure test configuration: a separate `test:prisma` suite and CI preparation use
   pinned tooling; missing tooling fails that suite instead of silently skipping it.
+- T5 compatibility contradiction after the first green commit: Prisma 6.14
+  `$extends` hides native `$on` (non-configurable undefined on its returned proxy).
+  Public client-extension reintroduction also throws a Proxy invariant TypeError.
+  Thus the first constructor substitution could break host event subscriptions,
+  despite passing query/transaction tests. Production changes were paused under
+  AGENTS.md's contradiction rule. A design experiment using a Proxy over the native
+  client, forwarding query access to the extended client and `$on` to native,
+  preserved method availability and subscription/disconnect. Asked the user to
+  approve this correction before implementing it.
+- T5 correction: the user explicitly approved the native-target Proxy. The real
+  CJS/ESM subscription regression observed RED (`$on` was undefined), then GREEN
+  with actual query-event delivery. All existing results/counts/transaction checks
+  pass. Added matching uninstrumented runs as a native behavior baseline.
+  Private subclass fields also work on the instrumented service. An explicit
+  application extension calling a private-field method on its own extension
+  receiver fails in native Prisma as well; the fixture calls the service through
+  its original reference instead. This is a fixture correction, not a hidden
+  compatibility fix. No private Prisma API or application edit is required.
 
 ## Compatibility evidence
 

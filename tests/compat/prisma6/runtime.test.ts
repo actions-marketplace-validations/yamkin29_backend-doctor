@@ -12,6 +12,21 @@ test.each(["cjs", "mjs"])(
 	(format) => {
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), "bd-real-prisma-"));
 		try {
+			const native = spawnSync(
+				process.execPath,
+				[path.join(fixture, `app.${format}`)],
+				{
+					cwd: fixture,
+					encoding: "utf8",
+					timeout: 20_000,
+					env: {
+						...process.env,
+						PRISMA_PROOF_DB: `file:${path.join(root, "native.db")}`,
+					},
+				},
+			);
+			expect(native.status, native.stderr).toBe(0);
+			expect(native.stdout).toContain("prisma6-runtime-ok");
 			const eventsPath = path.join(root, "events.ndjson");
 			const result = spawnSync(
 				process.execPath,

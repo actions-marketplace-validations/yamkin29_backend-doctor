@@ -1,7 +1,11 @@
 # Design 026 — Audit remediation
 
-Status: ready for implementation. Real-client proof required by spec 026 has run;
+Status: implementation verified through T5. Real-client proof required by spec 026 has run;
 the user deferred the Prisma 7 standard-generator loader to a separate specification.
+Runtime follow-up: the user approved the T5 correction after `$extends` was found
+to hide native `$on`. Return a Proxy over the native client, delegate query access
+to its extended client, and retain native `$on`. Event subscriptions, subclass
+private fields and the full real-client behavior suite now pass in CJS and ESM.
 
 ## Module layout
 
@@ -43,6 +47,13 @@ the user deferred the Prisma 7 standard-generator loader to a separate specifica
    targets. The user chose a separate loader specification under OQ-4. This feature
    implements verified Prisma 6.14 instrumentation and documents that Prisma 7
    standard-generator queries are not intercepted, including a collector notice.
+7. `$extends` hides native `$on` with a non-configurable undefined property, so
+   the probe returns a Proxy over the native client instead of the extended target.
+   Reads of `$on` stay native; other reads delegate to the query extension. Writes,
+   subclass initialization and property ownership stay on the native target.
+   The user explicitly approved this correction on 2026-10-13. Identical native
+   and instrumented scenarios verify event delivery, private subclass fields,
+   application extensions, transactions, errors and cleanup in CJS and ESM.
 
 ## Dependencies and proof preparation
 
