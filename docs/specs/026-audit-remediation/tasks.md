@@ -10,7 +10,7 @@
   GREEN: compiler resolution in parser boundary and visible graph limitations.
 - [x] **T3. Parse failures and graph safety (AC-6–7).** RED: malformed mixed trees
   and unsupported unused conclusions. GREEN: syntax failures and suppression.
-- [ ] **T4. Pretty coverage (AC-8–9, 16).** RED: skipped/empty/scoped report tests.
+- [x] **T4. Pretty coverage (AC-8–9, 16).** RED: skipped/empty/scoped report tests.
   GREEN: analyzed counts and reasons using existing JSON fields.
 - [ ] **T5. Prisma instrumentation (AC-10–13, 16).** RED: real-client query/request
   count and host behavior regressions. GREEN: the verified public interception
@@ -43,6 +43,9 @@
   Syntax validation uses a no-lib/no-resolve compiler program over existing ASTs;
   a full ts-morph program unnecessarily loaded libs and slowed the suite. The
   syntax-only refactor retains all 769 passing tests and avoids extra discovery.
+- T4: counts/skips/zero-file pretty tests observed RED, then passed. The new
+  all-format alias/barrel CLI byte-equality case is characterization of T1/T2;
+  it was already green before the reporter change. JSON/JSONL shapes are untouched.
 
 ## Compatibility evidence
 

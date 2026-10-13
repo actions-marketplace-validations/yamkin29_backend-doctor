@@ -29,6 +29,25 @@ export function renderPretty(doc: ReportDocument): string {
 	if (doc.runtime) {
 		lines.push(`Runtime trace: ${doc.runtime.sessionDir}`);
 	}
+	for (const project of doc.projects) {
+		if (doc.projects.length > 1)
+			lines.push(
+				`Project: ${path.relative(doc.directory, project.packageRoot) || "."}`,
+			);
+		lines.push(
+			`Analyzed: ${plural(project.analyzedFileCount, "supported TypeScript file")} (${project.complete ? "full" : "partial"} scope)`,
+		);
+		if (project.analyzedFileCount === 0) {
+			lines.push(
+				"Coverage: no supported TypeScript source files were analyzed.",
+			);
+		}
+		if (project.skippedChecks.length > 0) {
+			lines.push(`Skipped checks (${project.skippedChecks.length}):`);
+			for (const skipped of project.skippedChecks)
+				lines.push(`  ${skipped.check}: ${skipped.reason}`);
+		}
+	}
 
 	const errors = doc.diagnostics.filter((d) => d.severity === "error").length;
 	const warnings = doc.diagnostics.length - errors;
