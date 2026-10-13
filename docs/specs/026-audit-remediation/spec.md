@@ -4,9 +4,9 @@
 - **Phase:** 6 — Quality & release
 - **Depends on:** F003, F013, F015, F017, F020, F022, F023 (Done)
 - **Blocks:** Proposed GitBot integration (draft spec 025)
-- **Scope anchor:** The user's request to fix all findings from
-  `docs/AUDIT.md`, with a separate plan. This is a maintenance follow-up to
-  completed features, not the planned oxc parser migration.
+- **Scope anchor:** The user's request to fix all five local audit findings
+  (A01–A05) and both coverage/exit-code notes, with a separate plan. This is a
+  maintenance follow-up to completed features, not the planned oxc parser migration.
 
 ## Problem
 
@@ -50,8 +50,8 @@ bot on top of the reports.
 - A05: replace the `$use`-only compatibility assumption with verified modern
   instrumentation and a documented support matrix.
 - Address the TypeScript-only and exit-0 UX notes through accurate output/docs.
-- Add regression coverage, preserve deterministic static output, and update the
-  audit checklist only when a finding is verified as resolved.
+- Add regression coverage, preserve deterministic static output, and record
+  verified results in [tasks.md](tasks.md).
 
 ## Non-goals
 
@@ -227,7 +227,8 @@ Retain fake clients for collector failure paths, but add real-client evidence.
 Every implementation commit requires `pnpm test`, `pnpm exec tsc --noEmit`,
 `pnpm format` with rereading edited files, and `pnpm lint`. Close-out also runs
 build/docs validation and live scans/probes whose output is inspected. Update
-AUDIT, PLAN, and spec/task statuses only against observed results.
+PLAN and spec/task statuses only against observed results; record evidence in
+[tasks.md](tasks.md).
 
 ## Review decisions
 
