@@ -4,6 +4,14 @@ These private installations do not change backend-doctor's runtime dependencies.
 All versions are pinned in each package and lockfile. Databases/generated output
 are disposable and ignored. Queries stay on local SQLite.
 
+The main `pnpm test` suite stays independent of this installation. CI explicitly
+installs/generates Prisma 6.14, then runs `pnpm test:prisma`. To reproduce locally,
+run `npm ci --no-audit --no-fund` and
+`./node_modules/.bin/prisma generate --schema schema.prisma` in `prisma6`, then
+`pnpm test:prisma` from the repository root. Missing or ungenerated tooling fails
+the real-client suite; there is no optional skip. It creates disposable per-test
+databases and tests the built production hook through both CJS and ESM imports.
+
 ## Prisma 6.14.0
 
 From `tests/compat/prisma6`:

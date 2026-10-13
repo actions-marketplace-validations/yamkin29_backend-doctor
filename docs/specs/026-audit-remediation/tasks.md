@@ -12,7 +12,7 @@
   and unsupported unused conclusions. GREEN: syntax failures and suppression.
 - [x] **T4. Pretty coverage (AC-8–9, 16).** RED: skipped/empty/scoped report tests.
   GREEN: analyzed counts and reasons using existing JSON fields.
-- [ ] **T5. Prisma instrumentation (AC-10–13, 16).** RED: real-client query/request
+- [x] **T5. Prisma instrumentation (AC-10–13, 16).** RED: real-client query/request
   count and host behavior regressions. GREEN: the verified public interception
   surface; legacy path, duplicate prevention and unsupported notice.
 - [ ] **T6. Documentation and close-out (AC-14–16).** Review/test shown commands;
@@ -46,6 +46,16 @@
 - T4: counts/skips/zero-file pretty tests observed RED, then passed. The new
   all-format alias/barrel CLI byte-equality case is characterization of T1/T2;
   it was already green before the reporter change. JSON/JSONL shapes are untouched.
+- T5: both real-client runtime tests observed RED (zero query events), then GREEN
+  (11 operations, 9 attributed to one HTTP request) for CJS and ESM imports. Tests
+  include application query/client extensions, subclass fields/lifecycle, lazy batch
+  and interactive transactions, uniqueness error, exact rollback error identity,
+  rollback state, raw operations, cleanup and no query payload recording.
+  Real APIs live on instance proxies, not the class prototype. Bare Prisma subpaths
+  needed the existing target-family match; a WeakMap reuses the same wrapper across
+  generated export copies. The new-loader scope for Prisma 7 remains deferred.
+  Pure test configuration: a separate `test:prisma` suite and CI preparation use
+  pinned tooling; missing tooling fails that suite instead of silently skipping it.
 
 ## Compatibility evidence
 

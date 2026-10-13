@@ -12,7 +12,7 @@ export default defineConfig({
 		testTimeout: 30_000,
 		// Fixture trees are data, not suites — a fixture named *.test.ts
 		// (the spec 014 test-shape fixture) must not be collected as a test.
-		exclude: ["tests/fixtures/**", ...defaultExclude],
+		exclude: ["tests/fixtures/**", "tests/compat/**", ...defaultExclude],
 		// The pretty reporter colorizes through picocolors, whose detection
 		// turns colors ON whenever the CI env var is set — even piped, as in
 		// GitHub Actions — so byte-pinned assertions on its output fail in CI
