@@ -40,7 +40,9 @@ export async function run(argv: string[]): Promise<number> {
 	let exit = 0;
 	program
 		.command("scan")
-		.description("Scan a project for issues.")
+		.description(
+			"Scan supported TypeScript source files (.ts, .tsx, .mts, .cts) for issues.",
+		)
 		.argument("[path]", "directory or file to scan (default: cwd)")
 		.addOption(
 			new Option("--format <format>", "output format: pretty|json|jsonl")

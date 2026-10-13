@@ -16,6 +16,13 @@ function write(name: string, content: string) {
 	fs.writeFileSync(file, content);
 }
 
+test("scan help explicitly identifies supported static TypeScript extensions", () => {
+	const result = runCli(["scan", "--help"]);
+	expectSuccess(result);
+	for (const extension of [".ts", ".tsx", ".mts", ".cts"])
+		expect(result.stdout).toContain(extension);
+});
+
 test("CLI exposes binary-file skips even with zero issues; JSONL stays diagnostic-only", () => {
 	write("broken.ts", "binary\u0000");
 	const pretty = runCli(["scan", root]);

@@ -6,8 +6,14 @@ Before implementation, follow the repository's spec/design/tasks workflow;
 changes to scope or stable contracts still require user approval.
 
 Follow-up: [separate remediation plan](AUDIT_FIX_PLAN.md) and
-[draft spec 026](specs/026-audit-remediation/spec.md). Findings below remain
-unchecked until their fixes are implemented and verified.
+[approved spec 026](specs/026-audit-remediation/spec.md). Checked findings have
+verified fixes; descriptions below preserve the original audit reproduction.
+
+Current remediation: A01–A05 and both coverage/exit-code notes are fixed and verified
+under approved spec 026. Prisma 6.14 uses a native-target Proxy to preserve `$on`;
+real CJS/ESM regression and CLI probe checks pass. Prisma 7
+standard-generator loading was deferred by the user to [draft spec 027](specs/027-prisma-generated-client-loader/spec.md).
+See [the compatibility matrix](PRISMA_COMPATIBILITY.md) for the exact tested scope.
 
 ## Verified baseline
 
@@ -30,7 +36,7 @@ changes or fixes were made during the audit.
 
 ### A01 — Re-exports break file reachability
 
-- [ ] Include module references from `export … from` in the import graph,
+- [x] Include module references from `export … from` in the import graph,
   with regression coverage for named and wildcard re-exports.
 
 **Confirmed by reproduction.** Create these files in a project with an
@@ -61,7 +67,7 @@ export declarations. Reachability is consumed by
 
 ### A02 — TypeScript path aliases cause false unused findings
 
-- [ ] Decide and specify alias support or explicit reporting of this
+- [x] Decide and specify alias support or explicit reporting of this
   limitation; verify that unsupported resolution does not produce
   misleading unused-code claims.
 
@@ -87,7 +93,7 @@ approved scope decision.
 
 ### A03 — The pretty report hides skipped files/checks
 
-- [ ] Show skipped work in the human-readable report and add regression
+- [x] Show skipped work in the human-readable report and add regression
   coverage for a scan with skipped work but no diagnostics.
 
 **Confirmed by reproduction.** Create a project containing `main.ts` with
@@ -108,7 +114,7 @@ contrary to the project's fail-loud principle.
 
 ### A04 — Invalid syntax is not surfaced as a parse problem
 
-- [ ] Define handling of parser syntax diagnostics and test that malformed
+- [x] Define handling of parser syntax diagnostics and test that malformed
   files do not receive an apparently complete, clean scan without notice.
 
 **Confirmed by reproduction.** A `main.ts` containing only:
@@ -129,7 +135,7 @@ files when designing the fix.
 
 ### A05 — Prisma runtime collection depends on removed middleware
 
-- [ ] Define supported Prisma versions and update runtime instrumentation
+- [x] Define supported Prisma versions and update runtime instrumentation
   accordingly; validate against a real supported client in addition to
   the current fake-client fixtures.
 
@@ -156,14 +162,14 @@ not compatibility with a real modern Prisma installation.
 
 These are separate from the confirmed implementation defects above.
 
-- [ ] Clarify TypeScript-only static scanning in user-facing output/docs,
+- [x] Clarify TypeScript-only static scanning in user-facing output/docs,
   or propose JavaScript support as a separately scoped feature.
   [`SUPPORTED_EXTENSIONS`](../src/engine/collect.ts) contains only `.ts`,
   `.tsx`, `.mts`, and `.cts`. A project containing only `main.js` with
   `eval(userInput)` returned zero analyzed files, zero findings, exit 0,
   and `complete: true` in the reproduction. JavaScript support is not part
   of the current spec 003 file collection contract.
-- [ ] Ensure users understand that exit 0 does not mean zero findings.
+- [x] Ensure users understand that exit 0 does not mean zero findings.
   All 41 registered rules currently default to `warn`; the bad eval app
   therefore exits 0 with 44 findings. This follows the intended severity
   policy and is not a bug. Configure rule/category severities or CI
@@ -176,3 +182,19 @@ These are separate from the confirmed implementation defects above.
 3. A05: repair or clearly bound real Prisma runtime compatibility.
 4. A02: specify alias resolution and its precision boundaries.
 5. Address the capability/UX notes without silently expanding scope.
+
+## Remediation verification — spec 026
+
+- Main suite: 776 tests across 74 files; isolated real Prisma suite: 2 CJS/ESM
+  cases, each comparing native and instrumented host behavior.
+- Typecheck, format/re-read, lint, production build and all 41 rule docs passed.
+- Live scans: `nest-good` 12 analyzed files, zero findings/skips; `nest-bad`
+  18 files, 44 warnings, zero skips. Repeated JSON output is byte-identical.
+- Mixed alias/barrel project: three healthy files continue to be analyzed;
+  malformed and binary files yield two read notices and three explicit suppressed
+  unused-check notices in pretty output, with zero speculative findings.
+- Live Prisma 6.14 CLI probe: HTTP 200, 11 query operations, 9 in `GET /proof`,
+  possible-N+1 warning at threshold 4, preserved subscriptions and cleanup.
+- Stable report/event fields, exit codes, public exports and runtime dependencies
+  are unchanged. Linux CI compatibility preparation is configured; no remote CI
+  run or package publication is claimed by this local verification.

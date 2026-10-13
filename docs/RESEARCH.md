@@ -482,12 +482,21 @@ Under interop, a module **without** a default export exposes a *virtual*
   spread), so a wrapped class re-appears on a new exports object without
   any exports-level marker; the class-level marker survives the copy and
   prevents double wrapping (= double counting).
-- **Prisma `$use` middleware is the stable counting surface** (works across
-  Prisma 5/6): subclass the exported `PrismaClient`, install one middleware
-  per instance in the constructor, read only `params.model`/`params.action`
-  and wall time. `next(params)` returns a promise — record on settle via
-  then/catch re-throw. A client without `$use` → one notice, collector
-  stands down (spec 020 AC-7).
+- **Prisma middleware is a legacy surface, not a Prisma 5/6 guarantee.** `$use`
+  was removed in 6.14.0. The real spec 026 SQLite proof exercises public query
+  extensions with CJS/ESM imports, request attribution, lazy batch/interactive
+  transactions, subclass methods, application extensions, errors and cleanup.
+  Runtime APIs are on instance proxies, not necessarily class prototypes.
+  `$extends` hides native `$on`; returning its proxy directly breaks host event
+  subscriptions. Restoring `$on` via a client extension violates a non-configurable
+  Proxy invariant. The user-approved native-target forwarding Proxy preserves
+  `$on` and delegates other reads to the query extension. Real CJS/ESM regressions
+  compare native and instrumented runs, including query-event delivery and private
+  subclass fields. See spec 026's recorded contradiction and correction.
+- **Generated output is a separate loading boundary.** Prisma 7.0.0's standard
+  generator compiled to CJS executed real SQLite operations but loaded its class
+  from a custom path outside current module families. The user deferred that loader
+  to draft spec 027; do not claim support from zero recorded queries.
 - **`PerformanceObserver` holds no event-loop reference** (Node 22.13.1):
   there is no `unref()` and none is needed — the host exits normally with
   the observer attached. GC kinds live on `entry.detail` (`{kind, flags}`);

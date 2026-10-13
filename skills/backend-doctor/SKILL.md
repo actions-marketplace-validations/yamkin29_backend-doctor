@@ -8,6 +8,8 @@ description: Deterministic static analysis for Node.js and NestJS backends. Use 
 `backend-doctor` is a deterministic static analyzer for Node.js/NestJS
 backends: the same tree always produces byte-identical findings. It reads the
 code — no network access, no telemetry, no changes to your files.
+Static file support is `.ts`, `.tsx`, `.mts` and `.cts`; JavaScript files
+(`.js`, `.cjs`, `.mjs`) are not analyzed.
 
 ## When to run
 
@@ -41,7 +43,8 @@ Notes:
 ## Reading findings
 
 With `--format jsonl` the scan prints one JSON object per finding and nothing
-else — empty output means the scanned code is clean. Fields:
+else. Empty output means no reported diagnostics; it does not establish clean
+code or complete coverage. Fields:
 
 - `id` — deterministic finding id, stable across runs; safe to reference in
   the conversation.
@@ -52,8 +55,21 @@ else — empty output means the scanned code is clean. Fields:
 - `tags` — extra classification. The tag `internal` means a rule crashed
   while scanning; report it as a tool problem, do not "fix" user code for it.
 
-Exit codes: `0` clean, `1` findings with `error` severity, `2` usage or
+Exit codes: `0` no error-severity findings (warnings and skipped work can exist),
+`1` findings with `error` severity, `2` usage or
 configuration problem (check flags and config; do not retry blindly).
+
+For coverage decisions, run:
+
+```sh
+npx backend-doctor-cli@latest scan --format json
+```
+
+Inspect `projects[].analyzedFileCount` and `projects[].skippedChecks` before
+declaring an audit complete. `complete: true` describes full scope only; it
+does not guarantee every check succeeded. Partial scans skip project rules.
+A zero-file scan can mean unsupported source extensions or an empty changed
+scope. Pretty output also displays counts and all skipped reasons.
 
 ## Acting on findings
 
@@ -63,7 +79,7 @@ configuration problem (check flags and config; do not retry blindly).
    code over disabling the rule.
 2. For bad/good examples, scope notes and configuration of a rule, read its
    doc at `docs/rules/backend-doctor/<rule>.md` in the backend-doctor
-   repository (https://github.com/yamkin29/Node-doctor), or run:
+   repository (https://github.com/yamkin29/backend-doctor), or run:
 
 ```sh
 npx backend-doctor-cli@latest rules explain backend-doctor/no-eval

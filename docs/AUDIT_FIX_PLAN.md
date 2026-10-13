@@ -1,12 +1,12 @@
 # Audit remediation plan — 2026-10-13
 
-- **Status:** Proposed — spec review required before implementation
+- **Status:** Implemented — approved spec 026 and its native `$on` correction verified
 - **Scope:** All five findings and both capability/UX notes in [AUDIT.md](AUDIT.md)
 - **Specification:** [Spec 026](specs/026-audit-remediation/spec.md)
 - **Priority:** Complete this work before the proposed GitBot integration
 
-This is the separate overview requested by the user. It is not `design.md`
-or an implementation task list: those documents follow spec approval.
+This is the separate overview requested by the user. Implementation decisions
+and evidence are in spec 026's `design.md` and `tasks.md`.
 The GitBot draft remains separate and has not been approved or implemented.
 
 ## Work packages and order
@@ -25,7 +25,12 @@ Each implementation task must start with a failing regression test, then a
 minimal fix, then cleanup. Record any existing behavior discovered to be
 intentional as characterization rather than claiming a red→green fix.
 
-## Decisions to approve
+## Approved decisions
+
+Recommendations below were approved by the user. The real Prisma 7 proof found
+an unmatched generated loading path; the user chose a separate loader specification
+(027) and current Prisma 6.14 remediation. The user also approved the native-client
+forwarding Proxy after the `$on` contradiction; its real-client regression now passes.
 
 1. **Coverage contract:** Keep `projects[].complete` as the current full-scope
    indicator, preserve report field shapes and JSONL's diagnostics-only form,
@@ -43,18 +48,20 @@ intentional as characterization rather than claiming a red→green fix.
 
 ## Completion conditions
 
-- [ ] A01 verified and checked off in AUDIT.md.
-- [ ] A02 verified and checked off in AUDIT.md.
-- [ ] A03 verified and checked off in AUDIT.md.
-- [ ] A04 verified and checked off in AUDIT.md.
-- [ ] A05 verified on a real supported client and checked off in AUDIT.md;
+- [x] A01 verified and checked off in AUDIT.md.
+- [x] A02 verified and checked off in AUDIT.md.
+- [x] A03 verified and checked off in AUDIT.md.
+- [x] A04 verified and checked off in AUDIT.md.
+- [x] A05 verified on a real supported client and checked off in AUDIT.md;
   unverified client/generator combinations are clearly documented.
-- [ ] Both UX notes addressed without changing the exit-code policy.
-- [ ] Design and TDD tasks exist; every acceptance criterion has a test or
+- [x] Both UX notes addressed without changing the exit-code policy.
+- [x] Design and TDD tasks exist; every acceptance criterion has a test or
   an explicit live compatibility check.
-- [ ] Required checks pass; CLI output has been inspected manually.
-- [ ] PLAN and spec status reflect the actual result.
+- [x] Required checks pass; CLI output has been inspected manually.
+- [x] PLAN and spec status reflect the actual result.
 
 The previous audit baseline was 755 passing tests, successful typecheck,
 lint, build, and rule-doc validation. It is a baseline, not evidence that
-these repairs are already implemented. No code has been changed for this plan.
+these repairs are already implemented. See spec 026 tasks and AUDIT.md's
+remediation verification for the final evidence: 776 main tests plus two real-client
+compatibility cases, successful required checks and inspected live scan/probe output.

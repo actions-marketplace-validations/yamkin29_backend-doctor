@@ -15,7 +15,7 @@
 - [x] **T5. Prisma instrumentation (AC-10–13, 16).** RED: real-client query/request
   count and host behavior regressions. GREEN: the verified public interception
   surface; legacy path, duplicate prevention and unsupported notice.
-- [ ] **T6. Documentation and close-out (AC-14–16).** Review/test shown commands;
+- [x] **T6. Documentation and close-out (AC-14–16).** Review/test shown commands;
   run full suite, typecheck, format/re-read, lint, build and rule-doc validation;
   live smoke scans/probes. Check audit items only with evidence; record deviations;
   set spec Implemented and PLAN Done only when all ACs are satisfied.
@@ -74,6 +74,34 @@
   receiver fails in native Prisma as well; the fixture calls the service through
   its original reference instead. This is a fixture correction, not a hidden
   compatibility fix. No private Prisma API or application edit is required.
+- T6: README, CLI scan help, shipped skill, RESEARCH and a precise Prisma matrix
+  now describe actual coverage. The help-extension e2e case observed RED then
+  GREEN. The skill coverage assertion characterizes already-corrected prose;
+  documentation/manifests and close-out status changes have no runtime TDD cycle.
+  All audit items and both UX notes are checked against evidence. Spec 027 is a
+  separate draft for the user-requested Prisma 7 loader, with open questions and
+  no implementation authorization. Spec 025 stays outside these commits.
+
+## Final verification
+
+- `pnpm test`: 776 passing tests across 74 files; existing golden/precision,
+  report/exit-code/config/export/package and probe contracts remain green.
+- `pnpm test:prisma`: two passing real-client CJS/ESM cases, each with a native
+  baseline and double-preloaded instrumented run. Native `$on` receives real events;
+  private subclass fields, lifecycle, extensions, laziness, results/error identity,
+  rollback, disconnect and exact counts remain valid. No query payload is recorded.
+- `pnpm exec tsc --noEmit`, `pnpm format` followed by rereading edited files,
+  `pnpm lint`, `pnpm build`, `pnpm docs:rules`: passed; all 41 rule docs match.
+- Live good/bad eval scans: 12 files/zero findings and 18 files/44 warnings,
+  zero skipped checks; repeated JSON byte-identical. Mixed alias/barrel project
+  continues on three healthy files and visibly reports two read failures plus
+  three suppressed unused checks, with no speculative findings.
+- Live production `probe` of the Prisma 6.14 CJS fixture: host exit 0/HTTP 200,
+  11 query operations, 9 attributed to `GET /proof`; findings.json contains
+  the exact endpoint count and a possible-N+1 warning at threshold 4. Output inspected.
+- Diff review: schema versions, public exports, runtime dependencies, config
+  names/precedence and exit policies remain unchanged. CI preparation is configured;
+  no remote CI run or publication is claimed by this local verification.
 
 ## Compatibility evidence
 

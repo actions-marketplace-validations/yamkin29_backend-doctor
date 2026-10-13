@@ -25,8 +25,10 @@ node proof.cjs
 
 The proof checks a public query extension: raw/model queries, lazy batch transactions,
 interactive transaction ALS, CJS/ESM import, subclass methods/lifecycle, application
-extension, rejection and disconnect. This is a design experiment, not yet evidence
-that the production hook implements modern interception.
+extension, rejection and disconnect. This initial design experiment does not cover
+native `$on`. The separate `pnpm test:prisma` regression verifies the production
+hook's approved native-target Proxy, actual event subscriptions, private subclass
+fields, all those query behaviors and matching uninstrumented baselines.
 
 ## Prisma 7.0.0
 
@@ -51,4 +53,5 @@ relative URL uses the disposable database in that directory.
 
 Observed: real model queries succeed, but the generated client class does not pass
 through the existing `@prisma/client` / `.prisma/client` interception targets. An
-additional loader surface requires the user decision specified in spec 026.
+additional loader surface was deferred by the user to draft spec 027; it is not
+implemented by the current production hook.

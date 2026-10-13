@@ -1,6 +1,6 @@
 # Spec 026 — Audit remediation (F026)
 
-- **Status:** Approved — implementation preparation
+- **Status:** Implemented
 - **Phase:** 6 — Quality & release
 - **Depends on:** F003, F013, F015, F017, F020, F022, F023 (Done)
 - **Blocks:** Proposed GitBot integration (draft spec 025)
@@ -237,6 +237,9 @@ After the real Prisma 7 proof, the user explicitly chose to defer its standard
 generator's new loader to a separate specification, fix Prisma 6.14 now, and
 document the Prisma 7 limitation. AC-10–13 apply to the verified existing loading
 surface; AC-14 includes the unsupported standard-generator matrix entry.
+The user also approved the native-target forwarding Proxy after the real-client
+proof revealed that `$extends` hides `$on`. The correction preserves native
+subscription behavior and passes the CJS/ESM regression with native baselines.
 
 1. **OQ-1 — `complete` semantics:** Preserve its current scope-only meaning and
    expose skips/counts, or propose a separate contract migration?

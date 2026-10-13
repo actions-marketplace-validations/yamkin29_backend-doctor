@@ -84,6 +84,18 @@ function invocations(content: string): string[] {
 }
 
 describe("skills/backend-doctor/SKILL.md (spec 017 AC-6)", () => {
+	it("does not infer clean code from exit 0 or empty JSONL, and teaches JSON coverage inspection", () => {
+		const content = readSkill();
+		expect(content).not.toContain(
+			"empty output means the scanned code is clean",
+		);
+		expect(content).not.toContain("`0` clean");
+		expect(content).toContain(
+			"npx backend-doctor-cli@latest scan --format json",
+		);
+		expect(content).toContain("projects[].skippedChecks");
+		expect(content).toContain("projects[].analyzedFileCount");
+	});
 	it("exists with name/description frontmatter", () => {
 		const content = readSkill();
 		expect(content.startsWith("---\n")).toBe(true);

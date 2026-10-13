@@ -26,8 +26,17 @@ npx backend-doctor-cli@latest scan
 ```
 
 That scans the current directory and prints a pretty report. Exit code `0`
-means clean, `1` means findings at `error` severity, `2` means a usage or
-configuration problem (bad flag, unreadable config) — not a crash.
+means no `error`-severity findings; warnings and skipped checks can still exist.
+`1` means findings at `error` severity, `2` means a usage or
+configuration problem (bad flag, unreadable backend-doctor config) — not a crash.
+
+Static scanning supports `.ts`, `.tsx`, `.mts` and `.cts`; `.js`, `.cjs` and
+`.mjs` are not analyzed. The report shows the analyzed file count and skipped
+checks, including a clear notice when no supported source files were analyzed.
+Syntax/read failures do not abort healthy-file checks. Incomplete import graphs
+visibly skip unused-code conclusions. Re-exports and supported TypeScript
+`baseUrl`/`paths` aliases (including inherited config origins) participate in
+graph analysis; `tsconfig` include/exclude do not replace scan file selection.
 
 For machine-readable output:
 
@@ -35,6 +44,12 @@ For machine-readable output:
 npx backend-doctor-cli@latest scan --format json    # one schemaVersion-1 document
 npx backend-doctor-cli@latest scan --format jsonl   # one JSON object per finding
 ```
+
+Use JSON when coverage matters: inspect `projects[].analyzedFileCount` and
+`projects[].skippedChecks`. `complete: true` means full scan scope, not that every
+check succeeded. JSONL contains only diagnostics, so empty JSONL does not prove
+complete coverage or clean code. Partial scans skip project rules explicitly;
+an empty changed-file scope is a successful empty scan.
 
 Useful scan flags:
 
@@ -131,6 +146,10 @@ npx backend-doctor-cli@latest ci install
 
 ## Runtime probe
 
+Prisma collection has a specific version/generator/loading boundary. See the
+[verified compatibility matrix](docs/PRISMA_COMPATIBILITY.md) before interpreting
+query counts; the Prisma 7 standard generator requires a separate loader feature.
+
 Static analysis misses what only shows up while the process runs. The probe
 starts your app instrumented — no code changes — and records event-loop lags,
 blocking calls with file:line attribution, HTTP endpoint latencies, database
@@ -182,7 +201,8 @@ npx backend-doctor-cli@latest scan --scope changed --format jsonl
 
 Each jsonl line is one finding with a deterministic `id` (stable across runs),
 `filePath`/`line`/`column`, the `rule` id, `category`, `severity`, `message`
-and `tags` — empty output means clean. Agents can read the offending rule's
+and `tags` — empty output means no reported diagnostics; inspect JSON coverage
+before calling the scan complete. Agents can read the offending rule's
 doc from `docs/rules/backend-doctor/` in the installed package.
 
 ## Development
@@ -190,6 +210,7 @@ doc from `docs/rules/backend-doctor/` in the installed package.
 ```sh
 pnpm install
 pnpm test        # vitest; builds the CLI first
+pnpm test:prisma # real-client suite after tests/compat/README.md preparation
 pnpm lint        # biome
 pnpm build       # tsup → dist/
 pnpm docs:rules  # rule-docs ↔ registry drift check

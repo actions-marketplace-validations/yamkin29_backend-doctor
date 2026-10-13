@@ -1,6 +1,6 @@
 # Design 026 — Audit remediation
 
-Status: implementation verified through T5. Real-client proof required by spec 026 has run;
+Status: Implemented. Real-client proof required by spec 026 has run;
 the user deferred the Prisma 7 standard-generator loader to a separate specification.
 Runtime follow-up: the user approved the T5 correction after `$extends` was found
 to hide native `$on`. Return a Proxy over the native client, delegate query access
@@ -81,13 +81,13 @@ the disposable empty file before `db push` succeeds. See harness README for comm
 
 | AC | Test evidence |
 | --- | --- |
-| 1–2 | Parser re-export tests; graph reachability/cycle integration tests |
-| 3–4 | Temporary trees with exact/wildcard/fallback/inherited/nested configs |
-| 5 | Invalid/unreadable configs and unresolved/ignored internal targets; visible suppression |
-| 6–7 | Malformed TS/TSX, read failures, mixed healthy/broken scans |
-| 8–9 | Pretty counts/skips, zero-file and scoped-empty CLI reports |
-| 10–11 | Real SQLite compatibility proof and runtime regression harness |
-| 12–13 | Double-load, unsupported client, remaining-collector tests |
-| 14 | Documentation review against proven matrix and real CLI commands |
-| 15 | Repeated scans and existing eval golden/precision tests |
-| 16 | Existing config, exports, report, scope, exit-code and probe tests |
+| 1–2 | `tests/unit/engine/parser/ts-morph-adapter.test.ts`; barrel/cycle cases in `tests/integration/audit-remediation.test.ts` |
+| 3–4 | Exact/wildcard/competing/fallback/inherited/nested cases in `tests/integration/audit-remediation.test.ts` |
+| 5 | Invalid/unreadable configs and unresolved/ignored internal targets in the same integration file; visible suppression |
+| 6–7 | Malformed TS/TSX adapter cases; mixed healthy/broken audit integration; read-failure assertions in `tests/integration/scan.test.ts` |
+| 8–9 | `tests/unit/reporters.test.ts`; zero-file, binary and scoped-empty cases in `tests/e2e/audit-remediation.test.ts` |
+| 10–11 | `tests/compat/prisma6/runtime.test.ts`: native and instrumented SQLite scenarios for CJS/ESM; live production CLI probe |
+| 12–13 | Double-load and exact real counts in that runtime test; legacy/unsupported/inert collector cases in `tests/unit/probe/hook.test.ts` |
+| 14 | `tests/unit/skill.test.ts`; scan-help audit e2e case; README/help/compatibility matrix review and executed CLI commands |
+| 15 | All-format byte-equality audit e2e case; existing `tests/e2e/eval-corpus.test.ts` golden/precision gate |
+| 16 | Existing config, package/report/JSONL/scope and probe contract tests; diff review confirms unchanged exports/runtime dependencies |
