@@ -42,10 +42,14 @@ const WORKFLOW_RELATIVE = path.join(
 export function ciInstallCommand(
 	opts: CiInstallOptions,
 	cwd = process.cwd(),
+	output: {
+		stdout: { write(text: string): unknown };
+		stderr: { write(text: string): unknown };
+	} = process,
 ): number {
 	const target = path.join(cwd, WORKFLOW_RELATIVE);
 	if (fs.existsSync(target) && !opts.force) {
-		process.stderr.write(
+		output.stderr.write(
 			`Workflow already exists: ${target} (use --force to overwrite)\n`,
 		);
 		return 2;
@@ -57,12 +61,10 @@ export function ciInstallCommand(
 			renderWorkflowTemplate(opts.actionRef ?? DEFAULT_ACTION_REF),
 		);
 	} catch (error) {
-		process.stderr.write(
-			`Cannot write workflow: ${(error as Error).message}\n`,
-		);
+		output.stderr.write(`Cannot write workflow: ${(error as Error).message}\n`);
 		return 2;
 	}
-	process.stdout.write(`Created ${target}\n`);
+	output.stdout.write(`Created ${target}\n`);
 	return 0;
 }
 

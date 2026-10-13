@@ -9,7 +9,7 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
   prompt scope/quoting and controls. GREEN: pure view/content/prompt modules and
   dependency/config setup (No TDD for dependency declarations). REFACTOR: share
   formatting and stable ordering; verify all registered docs; full checks; commit.
-- [ ] **T2. Activation, progress and actions (AC-1..5/13/16/18).**
+- [x] **T2. Activation, progress and actions (AC-1..5/13/16/18).**
   RED: activation/flag matrix, observer report equality/stages, platform clipboard
   outcomes and workflow confirmation/protection. GREEN: mode/progress/clipboard
   adapters and action state. REFACTOR: isolate presentation failures; full checks; commit.
@@ -32,3 +32,7 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
 - T1: 19 new tests failed on absent modules before implementation, then passed.
   All 41 registered rule documents have Problem/Good guidance. GitHub API verified
   the repository is public with default branch main; links can use those paths.
+- T2: activation/action/clipboard suites failed on absent modules and the progress
+  test failed on missing events before implementation. Eleven new tests pass.
+  Workflow output is injectable internally; default direct-command bytes remain
+  unchanged. Keyboard confirmation and presentation-failure isolation land in T3.

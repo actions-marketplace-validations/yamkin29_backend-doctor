@@ -48,9 +48,19 @@ export interface ScanResult {
  * rule execution are deterministic; every per-file or per-rule failure is
  * recorded instead of failing the scan (constitution §8).
  */
-export async function runScan(input: ScanInput): Promise<ScanResult> {
+export async function runScan(
+	input: ScanInput,
+	onProgress?: (stage: string) => void | Promise<void>,
+): Promise<ScanResult> {
 	const target = path.resolve(input.directory);
 	const { scope } = input;
+	const progress = async (stage: string) => {
+		if (onProgress) {
+			await onProgress(stage);
+			await new Promise<void>((resolve) => setImmediate(resolve));
+		}
+	};
+	if (onProgress) await progress("Collecting files");
 
 	const collected = collectFiles({
 		target,
@@ -66,6 +76,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 			? collected
 			: collected.filter((filePath) => scope.files.has(filePath));
 	const packageRoot = findPackageRoot(target);
+	if (onProgress) await progress("Parsing source");
 	const adapter = new TsMorphParserAdapter();
 	const {
 		files,
@@ -89,6 +100,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 			reason: `${relativeTo(target, failure.filePath)}: ${failure.reason}`,
 		});
 	}
+	if (onProgress) await progress("Detecting frameworks");
 	const detection = detectFrameworks({
 		packageRoot,
 		scanRoot: target,
@@ -105,6 +117,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 		if (built.failure) skippedChecks.push(built.failure);
 	}
 
+	if (onProgress) await progress("Checking file rules");
 	for (const file of files) {
 		const outcome = runRules({
 			file,
@@ -143,6 +156,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 	// semantics need the full tree, so partial scopes skip the pass —
 	// visibly, never silently (spec 015 AC-9, constitution §8).
 	if (scope === undefined) {
+		if (onProgress) await progress("Checking project rules");
 		const projectOutcome = runProjectRules({
 			files,
 			config: input.config,
