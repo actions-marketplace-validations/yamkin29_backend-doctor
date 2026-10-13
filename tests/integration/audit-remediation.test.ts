@@ -22,6 +22,53 @@ function scan(ignore: string[] = []) {
 	return runScan({ directory: root, ignore, config: defaultConfig() });
 }
 
+test.each(["syntax", "binary"])(
+	"%s failure keeps healthy rules running and suppresses unsafe unused claims",
+	async (kind) => {
+		write("src/main.ts", 'eval("healthy-file");');
+		write(
+			"src/broken.ts",
+			kind === "syntax"
+				? 'eval("broken-file"); export function broken( {'
+				: "binary\u0000",
+		);
+		write("src/orphan.ts", "export const orphan = 1;");
+		const result = await scan();
+		expect(result.projects[0]?.analyzedFiles).toEqual([
+			"src/main.ts",
+			"src/orphan.ts",
+		]);
+		expect(result.projects[0]?.complete).toBe(true);
+		expect(result.diagnostics.map((d) => d.rule)).toEqual([
+			"backend-doctor/no-eval",
+		]);
+		expect(
+			result.projects[0]?.skippedChecks.some(
+				(s) => s.check === "read" && s.reason.startsWith("src/broken.ts:"),
+			),
+		).toBe(true);
+		expect(
+			result.projects[0]?.skippedChecks.filter((s) =>
+				s.check.includes("unused"),
+			),
+		).toHaveLength(3);
+		expect(await scan()).toEqual(result);
+	},
+);
+
+test("unreadable tsconfig is visible even without module references", async () => {
+	fs.mkdirSync(path.join(root, "tsconfig.json"));
+	write("src/main.ts", "const value = 1;");
+	const result = await scan();
+	expect(
+		result.projects[0]?.skippedChecks.some(
+			(s) =>
+				s.check === "module-resolution" &&
+				s.reason.startsWith("tsconfig.json:"),
+		),
+	).toBe(true);
+});
+
 test("barrel chains keep used files reachable and report re-export cycles", async () => {
 	write("src/main.ts", 'import { used } from "./barrel.js"; void used;');
 	write("src/barrel.ts", 'export { used } from "./all.js";');

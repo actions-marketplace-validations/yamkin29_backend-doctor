@@ -8,7 +8,7 @@
   rule regressions. GREEN: collect module-bearing export declarations.
 - [x] **T2. Alias resolution (AC-3–5, 15–16).** RED: config tree/graph tests.
   GREEN: compiler resolution in parser boundary and visible graph limitations.
-- [ ] **T3. Parse failures and graph safety (AC-6–7).** RED: malformed mixed trees
+- [x] **T3. Parse failures and graph safety (AC-6–7).** RED: malformed mixed trees
   and unsupported unused conclusions. GREEN: syntax failures and suppression.
 - [ ] **T4. Pretty coverage (AC-8–9, 16).** RED: skipped/empty/scoped report tests.
   GREEN: analyzed counts and reasons using existing JSON fields.
@@ -35,6 +35,14 @@
   for actual references remain cached. Seven new alias cases observed RED, then
   the full suite passed (764 tests). Conservative suppression covers enabled unused
   rules; resolved cycles and healthy source rules still run.
+- T3: malformed TS/TSX and mixed-tree tests observed RED. The pre-existing
+  unreadable-file integration assertion was updated to the approved suppression
+  behavior (read notice plus three unused-rule notices, two healthy findings).
+  Unreadable config (a directory at tsconfig.json) characterizes the compiler's
+  already-supported failure channel; it required no further implementation.
+  Syntax validation uses a no-lib/no-resolve compiler program over existing ASTs;
+  a full ts-morph program unnecessarily loaded libs and slowed the suite. The
+  syntax-only refactor retains all 769 passing tests and avoids extra discovery.
 
 ## Compatibility evidence
 

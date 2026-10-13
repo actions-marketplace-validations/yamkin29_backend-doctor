@@ -260,7 +260,7 @@ describe("runScan fail-soft behavior (AC-2, constitution §8)", () => {
 			});
 
 			expect(result.projects[0]?.complete).toBe(true);
-			expect(result.projects[0]?.skippedChecks).toHaveLength(1);
+			expect(result.projects[0]?.skippedChecks).toHaveLength(4);
 			expect(result.projects[0]?.skippedChecks[0]).toMatchObject({
 				check: "read",
 				reason: expect.stringContaining("src/secret.ts"),
@@ -269,9 +269,9 @@ describe("runScan fail-soft behavior (AC-2, constitution §8)", () => {
 				"src/index.ts",
 				"src/util.ts",
 			]);
-			// no-eval, no-new-func + the graph findings on the unreachable
-			// util.ts (spec 013).
-			expect(result.diagnostics).toHaveLength(4);
+			// Healthy file rules continue; absent source evidence now suppresses
+			// unused-code conclusions visibly (spec 026).
+			expect(result.diagnostics).toHaveLength(2);
 		} finally {
 			fs.chmodSync(path.join(tmp, "src", "secret.ts"), 0o644);
 			fs.rmSync(tmp, { recursive: true, force: true });

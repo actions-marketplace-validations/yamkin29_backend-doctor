@@ -30,10 +30,36 @@ export class TsMorphParserAdapter implements ParserAdapter {
 		const failures: FileLoadFailure[] = [];
 		const resolutionFailures: FileLoadFailure[] = [];
 		const configs = new Map<string, ts.CompilerOptions>();
+		const loaded: SourceFile[] = [];
 
 		for (const filePath of filePaths) {
 			const sourceFile = this.loadSourceFile(project, filePath, failures);
-			if (!sourceFile) continue;
+			if (sourceFile) loaded.push(sourceFile);
+		}
+		// A syntax-only compiler program reuses our ASTs and never loads libs or
+		// dependencies. Semantic/type errors are outside this analyzer's scope.
+		const byPath = new Map<string, ts.SourceFile>(
+			loaded.map((file) => [file.getFilePath(), file.compilerNode]),
+		);
+		const syntaxOptions = { noLib: true, noResolve: true };
+		const program = ts.createProgram([...byPath.keys()], syntaxOptions, {
+			...ts.createCompilerHost(syntaxOptions),
+			getSourceFile: (fileName) => byPath.get(path.resolve(fileName)),
+		});
+		for (const sourceFile of loaded) {
+			const filePath = sourceFile.getFilePath();
+			const syntaxErrors = program.getSyntacticDiagnostics(
+				sourceFile.compilerNode,
+			);
+			const first = syntaxErrors[0];
+			if (first) {
+				const position = sourceFile.getLineAndColumnAtPos(first.start ?? 0);
+				failures.push({
+					filePath,
+					reason: `syntax error at ${position.line}:${position.column}: ${ts.flattenDiagnosticMessageText(first.messageText, " ")}`,
+				});
+				continue;
+			}
 			const compilerOptions = options
 				? compilerOptionsFor(
 						filePath,

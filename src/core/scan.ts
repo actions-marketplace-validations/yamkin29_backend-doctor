@@ -150,7 +150,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 			scanRoot: target,
 			detectedFrameworks: detection.frameworks,
 			packageRoot,
-			incompleteReasons: resolutionFailures.map(
+			incompleteReasons: [...failures, ...resolutionFailures].map(
 				(failure) =>
 					`${relativeTo(target, failure.filePath)}: ${failure.reason}`,
 			),
