@@ -49,7 +49,7 @@ export interface SourceFileView {
 	 */
 	forEachDescendant(cb: (node: Node) => "skip" | undefined): void;
 	/**
-	 * Module specifiers referenced by the file: static imports, dynamic
+	 * Module specifiers referenced by the file: static imports/re-exports, dynamic
 	 * `import("…")` and `require("…")` calls. Occurrences in comments or
 	 * unrelated string literals are not module references and are excluded
 	 * (spec 004, code markers).

@@ -4,7 +4,7 @@
   pinned test manifests/configuration. Run public-API experiments against real
   SQLite clients before finalizing design; record exact results. Stop and present
   any additional loader scope or behavior contradiction to the user.
-- [ ] **T1. Re-export edges (AC-1–2, 15–16).** RED: adapter references and graph
+- [x] **T1. Re-export edges (AC-1–2, 15–16).** RED: adapter references and graph
   rule regressions. GREEN: collect module-bearing export declarations.
 - [ ] **T2. Alias resolution (AC-3–5, 15–16).** RED: config tree/graph tests.
   GREEN: compiler resolution in parser boundary and visible graph limitations.

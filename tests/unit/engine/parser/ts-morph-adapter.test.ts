@@ -143,4 +143,22 @@ describe("TsMorphParserAdapter (AC-2)", () => {
 
 		expect(view.getModuleSpecifiers()).toEqual([]);
 	});
+
+	it("collects named, wildcard and namespace re-exports but not local exports", () => {
+		const file = write(
+			"src/barrel.ts",
+			[
+				'export { used } from "./named.js";',
+				'export * from "./all.js";',
+				'export * as ns from "./namespace.js";',
+				"const local = 1; export { local };",
+			].join("\n"),
+		);
+		const { files } = new TsMorphParserAdapter().createProject([file]);
+		expect(files[0]?.getModuleSpecifiers()).toEqual([
+			"./named.js",
+			"./all.js",
+			"./namespace.js",
+		]);
+	});
 });

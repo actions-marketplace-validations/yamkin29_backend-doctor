@@ -90,6 +90,11 @@ class TsMorphSourceFileView implements SourceFileView {
 				specifiers.push(node.getModuleSpecifierValue());
 				return;
 			}
+			if (Node.isExportDeclaration(node)) {
+				const specifier = node.getModuleSpecifierValue();
+				if (specifier !== undefined) specifiers.push(specifier);
+				return;
+			}
 			if (Node.isCallExpression(node)) {
 				const expression = node.getExpression();
 				const isRequire =
