@@ -92,6 +92,7 @@ projects[] }`.
 | F022 | Eval corpus & precision gate | 6 | Done |
 | F023 | npm publish & README | 6 | Done |
 | F024 | Agent skill installer (`backend-doctor install`) | 4 | Done |
+| F026 | Audit remediation (A01–A05 and coverage/exit-code clarity; spec 026) | 6 | Approved |
 
 ### Phase descriptions
 
@@ -176,6 +177,11 @@ Zero-intrusion: the app is started via `backend-doctor probe -- <start command>`
 - **F023 Publish** — npm publish `backend-doctor`, README, rule docs generation script.
 
 ## 5. Verification strategy
+
+Audit remediation takes priority over the proposed GitBot integration. See
+[AUDIT_FIX_PLAN.md](./AUDIT_FIX_PLAN.md) for the separate work plan and
+[spec 026](./specs/026-audit-remediation/spec.md) for review decisions. Spec 025
+remains an unapproved integration draft; F025 is not yet added to this roadmap.
 
 - Every rule: valid/invalid fixtures + diagnostic snapshot tests (vitest), written
   before implementation (TDD).
