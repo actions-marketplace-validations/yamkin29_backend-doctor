@@ -79,6 +79,11 @@ export async function run(argv: string[]): Promise<number> {
 		)
 		.option("--config <path>", "load exactly this config file, skip discovery")
 		.option(
+			"--interactive",
+			"use the interactive console (requires a terminal)",
+		)
+		.option("--no-interactive", "print the regular report without the console")
+		.option(
 			"--dump-config",
 			"print the resolved config as JSON and exit without scanning",
 		)

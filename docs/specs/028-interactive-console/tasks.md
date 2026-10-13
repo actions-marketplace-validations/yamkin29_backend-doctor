@@ -13,7 +13,7 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
   RED: activation/flag matrix, observer report equality/stages, platform clipboard
   outcomes and workflow confirmation/protection. GREEN: mode/progress/clipboard
   adapters and action state. REFACTOR: isolate presentation failures; full checks; commit.
-- [ ] **T3. Ink interface and CLI lifecycle (AC-6/8/10..17/19/20).**
+- [x] **T3. Ink interface and CLI lifecycle (AC-6/8/10..17/19/20).**
   RED: fake-stream keyboard/screens/resize/copy/failure/cleanup integration,
   actual CLI opt-out/machine format tests and tarball entry pin. GREEN: separate
   renderer entry, lazy loader and scan/session integration. REFACTOR: compact
@@ -36,3 +36,10 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
   test failed on missing events before implementation. Eleven new tests pass.
   Workflow output is injectable internally; default direct-command bytes remain
   unchanged. Keyboard confirmation and presentation-failure isolation land in T3.
+- T3: navigation/session tests failed on absent modules, CLI tests on unknown
+  flags and packaging on absent console entries before implementation. Nine new
+  tests cover keyboard/screens/resize/cleanup and machine-output regression.
+  The three fallback cases were added as characterization after CLI integration.
+  Ink's cli-cursor dependency initializes one process-lifetime exit hook; session
+  signal/input/resize listeners are removed and repeated sessions do not add hooks.
+  A live PTY confirmed results/review screens and successful q exit.

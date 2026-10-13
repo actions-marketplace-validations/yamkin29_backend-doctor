@@ -21,6 +21,8 @@ const PINNED_TARBALL_FILES = [
 	"README.md",
 	"dist/bin/backend-doctor.d.ts",
 	"dist/bin/backend-doctor.js",
+	"dist/bin/console.d.ts",
+	"dist/bin/console.js",
 	"dist/index.d.ts",
 	"dist/index.js",
 	"dist/probe/register.cjs",

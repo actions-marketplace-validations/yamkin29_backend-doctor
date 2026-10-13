@@ -4,6 +4,7 @@ import { defineConfig } from "tsup";
 export const buildOptions: Options = {
 	entry: {
 		"bin/backend-doctor": "src/bin/backend-doctor.ts",
+		"bin/console": "src/cli/console/session.tsx",
 		index: "src/index.ts",
 		// Maintainer tooling for rule docs (spec 017), not part of the user
 		// CLI and excluded from the npm tarball by spec 023's `files` list.
@@ -17,7 +18,7 @@ export const buildOptions: Options = {
 	dts: true,
 	// jiti ships its own loader machinery; keep it external so config loading
 	// uses the real runtime dependency instead of a bundled copy.
-	external: ["jiti"],
+	external: ["jiti", "ink", "react", "react/jsx-runtime"],
 };
 
 // The probe preload (spec 018) must be CommonJS: --require cannot load ESM,

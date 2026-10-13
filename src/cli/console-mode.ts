@@ -1,9 +1,19 @@
+import { fileURLToPath } from "node:url";
+
 export interface TerminalFacts {
 	stdinTTY: boolean;
 	stdoutTTY: boolean;
 	rawMode: boolean;
 	term: string;
 	ci: boolean;
+}
+
+/** Computed URL keeps renderer imports out of the noninteractive CLI entry. */
+export async function loadConsole() {
+	const entry = fileURLToPath(
+		new URL("../../dist/bin/console.js", import.meta.url),
+	);
+	return import(entry) as Promise<typeof import("./console/session.js")>;
 }
 
 export function resolveConsoleMode(
