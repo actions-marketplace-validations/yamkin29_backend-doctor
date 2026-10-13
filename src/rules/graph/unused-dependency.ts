@@ -24,7 +24,13 @@ export const unusedDependency = defineProjectRule({
 	analyze(project) {
 		const specifiers: string[] = [];
 		for (const view of project.files) {
-			specifiers.push(...view.getModuleSpecifiers());
+			specifiers.push(
+				...view
+					.getModuleSpecifiers()
+					.filter(
+						(specifier) => !project.graph.resolve(view.filePath, specifier),
+					),
+			);
 		}
 		const scripts = project.scripts;
 		for (const [name, specifier] of Object.entries(project.dependencies)) {

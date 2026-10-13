@@ -65,8 +65,13 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 		scope === undefined
 			? collected
 			: collected.filter((filePath) => scope.files.has(filePath));
+	const packageRoot = findPackageRoot(target);
 	const adapter = new TsMorphParserAdapter();
-	const { files, failures } = adapter.createProject(analyzed);
+	const {
+		files,
+		failures,
+		resolutionFailures = [],
+	} = adapter.createProject(analyzed, { packageRoot });
 
 	const diagnostics: Diagnostic[] = [];
 	const skippedChecks: SkippedCheck[] = [];
@@ -78,7 +83,12 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 		});
 	}
 
-	const packageRoot = findPackageRoot(target);
+	for (const failure of resolutionFailures) {
+		skippedChecks.push({
+			check: "module-resolution",
+			reason: `${relativeTo(target, failure.filePath)}: ${failure.reason}`,
+		});
+	}
 	const detection = detectFrameworks({
 		packageRoot,
 		scanRoot: target,
@@ -140,6 +150,10 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 			scanRoot: target,
 			detectedFrameworks: detection.frameworks,
 			packageRoot,
+			incompleteReasons: resolutionFailures.map(
+				(failure) =>
+					`${relativeTo(target, failure.filePath)}: ${failure.reason}`,
+			),
 		});
 		diagnostics.push(...projectOutcome.diagnostics);
 		skippedChecks.push(...projectOutcome.skippedChecks);

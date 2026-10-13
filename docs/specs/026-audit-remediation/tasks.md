@@ -6,7 +6,7 @@
   any additional loader scope or behavior contradiction to the user.
 - [x] **T1. Re-export edges (AC-1–2, 15–16).** RED: adapter references and graph
   rule regressions. GREEN: collect module-bearing export declarations.
-- [ ] **T2. Alias resolution (AC-3–5, 15–16).** RED: config tree/graph tests.
+- [x] **T2. Alias resolution (AC-3–5, 15–16).** RED: config tree/graph tests.
   GREEN: compiler resolution in parser boundary and visible graph limitations.
 - [ ] **T3. Parse failures and graph safety (AC-6–7).** RED: malformed mixed trees
   and unsupported unused conclusions. GREEN: syntax failures and suppression.
@@ -27,6 +27,14 @@
 - Baseline: 755 tests passed with local HTTP tests outside the restricted sandbox;
   previous failures were `listen EPERM`. Repeat required verification in the same
   permitted environment when necessary.
+- T1: first integration test run had an incorrect config import; corrected the
+  harness before observing the intended unused-file RED. Re-export cycle positions
+  now use the declaration rather than a fallback location.
+- T2: existing graph tests caught loss of ad-hoc `graph.resolve()` for specifiers
+  absent from a source's reference list. Restored that behavior; compiler results
+  for actual references remain cached. Seven new alias cases observed RED, then
+  the full suite passed (764 tests). Conservative suppression covers enabled unused
+  rules; resolved cycles and healthy source rules still run.
 
 ## Compatibility evidence
 
