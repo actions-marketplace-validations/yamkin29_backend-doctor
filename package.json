@@ -4,7 +4,7 @@
 	"description": "Deterministic static analyzer for Node.js/NestJS backends.",
 	"type": "module",
 	"license": "MIT",
-	"author": "Aleksey Yamkin",
+	"author": "Alexey Yamkin",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/yamkin29/backend-doctor.git"

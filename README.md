@@ -5,29 +5,43 @@
 [![npm downloads](https://img.shields.io/npm/dm/backend-doctor-cli)](https://www.npmjs.com/package/backend-doctor-cli)
 [![GitHub Marketplace](https://img.shields.io/badge/GitHub-Marketplace-blue?logo=github)](https://github.com/marketplace/actions/backend-doctor-node-js-nestjs-static-analyzer)
 
-A deterministic static analyzer for Node.js and NestJS backends. It reads your
-TypeScript — controllers, providers, services, repositories, Prisma queries,
-configuration — and reports what will bite in production: floating promises,
-event-loop blocking calls, security holes, broken dependency wiring,
-architecture drift.
+A deterministic static analyzer for TypeScript backends built with Node.js and
+NestJS. It finds floating promises, event-loop blocking calls, unsafe code,
+broken dependency wiring and architecture issues in controllers, services,
+Prisma queries and configuration.
+
+Review findings in an interactive console, copy repair tasks into your coding
+assistant, or check changed lines automatically in GitHub pull requests. An
+optional runtime probe adds evidence collected while your application runs.
 
 - **Deterministic** — the same tree produces byte-identical findings, every
   time, so ids can be referenced in code review and CI conversations.
 - **Precision over recall** — every rule is gated on an eval corpus whose
   clean application produces **zero** findings; a rule that cries wolf gets
   fixed or demoted before it ships.
-- **Zero intrusion** — no changes to your code, build config or runtime. No
-  network access, no telemetry: scans, traces and reports stay on your disk.
+- **Local analysis** — static scans do not modify application files or run your
+  application. Analysis runs offline, with no telemetry or source-code uploads.
+  GitHub reporting and the optional runtime probe are described below.
 
 ## Quick start
+
+Requires **Node.js 20 or newer**. Run this from your backend project's directory;
+no configuration is required to start:
 
 ```sh
 npx backend-doctor-cli@latest scan
 ```
 
 That scans the current directory and opens the console in a supported terminal;
-pipes and CI receive a regular pretty report. Exit code `0`
-means no `error`-severity findings; warnings and skipped checks can still exist.
+pipes and CI receive a regular text report.
+
+![Backend Doctor console showing grouped findings, source context and keyboard shortcuts](https://raw.githubusercontent.com/yamkin29/backend-doctor/main/docs/assets/console.png)
+
+Console output from an intentionally unsafe sample project. Select an issue,
+inspect its documentation, or copy a repair task for your coding assistant.
+
+Exit code `0` means no `error`-severity findings; warnings and skipped checks can
+still exist.
 `1` means findings at `error` severity, `2` means a usage or
 configuration problem (bad flag, unreadable backend-doctor config) — not a crash.
 
@@ -152,9 +166,15 @@ detected in the scanned project.
 
 ## CI (GitHub Actions)
 
-Add one step to any pull-request workflow — it posts a sticky PR summary,
-inline review comments on the changed lines and a commit status. Blocking is
-opt-in (`blocking: none` by default — findings are reported, not failed):
+GitHub Actions runs checks automatically when a pull request is opened or
+updated. This action reports findings on changed lines (`--scope lines`), posts
+or updates a PR summary, adds inline review comments and reports a commit status.
+It helps reviewers catch issues before merging.
+
+Changed-line scans skip project-wide rules that need a full import graph; the
+report lists those skipped checks. Run a full local `scan` for those checks.
+Findings are advisory by default (`blocking: none`). Add this workflow as
+`.github/workflows/backend-doctor.yml`:
 
 ```yaml
 name: Backend Doctor
@@ -181,7 +201,23 @@ jobs:
 
 Listed in the
 [GitHub Marketplace](https://github.com/marketplace/actions/backend-doctor-node-js-nestjs-static-analyzer).
-Prefer a generated file? `ci install` writes exactly this workflow for you:
+To fail the check on error-severity findings, configure the action step:
+
+```yaml
+      - uses: yamkin29/backend-doctor@v1
+        with:
+          blocking: error
+```
+
+Use `blocking: warn` to fail on warnings as well. To prevent merging when the
+check fails, make it a required check in your repository's branch rules.
+
+When GitHub reporting is enabled, finding summaries, file locations and inline
+comments are sent to GitHub using the workflow token. Static analysis itself
+does not upload your source files.
+
+Prefer a generated file? `ci install` creates a workflow with this setup and
+cancels superseded runs for the same pull request:
 
 ```sh
 npx backend-doctor-cli@latest ci install
@@ -194,9 +230,9 @@ Prisma collection has a specific version/generator/loading boundary. See the
 query counts; the Prisma 7 standard generator requires a separate loader feature.
 
 Static analysis misses what only shows up while the process runs. The probe
-starts your app instrumented — no code changes — and records event-loop lags,
-blocking calls with file:line attribution, HTTP endpoint latencies, database
-query counts and memory/GC signals:
+starts your app with runtime instrumentation, without editing its source files,
+and records event-loop lags, blocking calls with file:line attribution, HTTP
+endpoint latencies, database query counts and memory/GC signals:
 
 ```sh
 npx backend-doctor-cli@latest probe -- npm start
@@ -209,24 +245,30 @@ Sessions land in `./.backend-doctor/probe/`. Merge them into a static scan:
 npx backend-doctor-cli@latest scan --trace .backend-doctor/probe/<session>
 ```
 
-Traces contain URLs and filesystem paths — they are treated as sensitive and
-are never sent anywhere.
+The probe stores traces locally and does not upload them. Traces contain URLs
+and filesystem paths; review them before sharing. Your application still runs
+normally, including its own network requests and database connections.
 
 ## For coding agents
 
 The package ships an agent skill — a small instruction file that teaches
 coding agents supporting the Agent Skills format to run a scoped scan after
-backend edits and read the findings correctly. One command installs it:
+backend edits and read the findings correctly. Choose the agent to install it
+for, then run the corresponding command from your project:
 
 ```sh
-npx backend-doctor-cli@latest install
+# Codex → .codex/skills/backend-doctor/
+npx backend-doctor-cli@latest install --agent codex --scope project
+
+# Claude Code → .claude/skills/backend-doctor/
+npx backend-doctor-cli@latest install --agent claude-code --scope project
 ```
 
-With no flags that prints a detection report and writes nothing. Pick the
-target explicitly — `--agent claude-code` (also read by Cursor and VS Code)
-or `--agent codex`; `--scope project` writes into the current repo (default),
-`--scope global` into your home directory. Re-running after an upgrade
-reports "Up to date" or refuses with `--force` as the overwrite escape hatch.
+`--scope project` is the default; use `--scope global` to install into your home
+directory for use across projects. Running `install` without flags only prints
+an installation-status report and writes nothing. Identical installed content
+reports "Up to date"; different content is protected unless you pass `--force`
+to overwrite it.
 
 Prefer to wire the skill by hand? It ships in the package:
 
