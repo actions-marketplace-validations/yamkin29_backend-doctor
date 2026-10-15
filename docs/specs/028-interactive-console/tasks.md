@@ -59,3 +59,10 @@ Spec/OQ-1..3 approved 2026-10-13. Execute in order; commit each green task.
 - Final verification: 817 tests pass in 85 files; TypeScript noEmit, Biome format,
   lint and git diff --check pass. CLI/report/config/public-export contracts remain
   covered by the existing regression suite.
+- Release verification (2026-10-15): the final tarball's index.d.ts referenced a
+  shared declaration chunk created by the console entry but excluded by files.
+  A packed-file consumer test failed on the missing module and loss of category
+  checking. Build declarations only for the public library entry; internal CLI
+  declarations are no longer shipped. Public exports and the runtime file set
+  stay unchanged. The regression now typechecks valid defineConfig usage and
+  verifies invalid categories are still rejected.

@@ -1,7 +1,10 @@
 import { execFile } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const execFileAsync = promisify(execFile);
@@ -19,9 +22,7 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..");
 const PINNED_TARBALL_FILES = [
 	"LICENSE",
 	"README.md",
-	"dist/bin/backend-doctor.d.ts",
 	"dist/bin/backend-doctor.js",
-	"dist/bin/console.d.ts",
 	"dist/bin/console.js",
 	"dist/index.d.ts",
 	"dist/index.js",
@@ -72,6 +73,52 @@ const PINNED_TARBALL_FILES = [
 ];
 
 describe("npm tarball contents (spec 023 AC-1)", () => {
+	it("typechecks defineConfig from only the files included in the package", async () => {
+		const { stdout } = await execFileAsync(
+			"npm",
+			["pack", "--dry-run", "--json"],
+			{ cwd: repoRoot },
+		);
+		const packed = JSON.parse(stdout) as Array<{
+			files: Array<{ path: string }>;
+		}>;
+		const root = fs.mkdtempSync(
+			path.join(os.tmpdir(), "backend-doctor-packed-types-"),
+		);
+		try {
+			const installed = path.join(root, "node_modules", "backend-doctor-cli");
+			for (const file of packed[0]?.files ?? []) {
+				const destination = path.join(installed, file.path);
+				fs.mkdirSync(path.dirname(destination), { recursive: true });
+				fs.copyFileSync(path.join(repoRoot, file.path), destination);
+			}
+			const consumer = path.join(root, "config.mts");
+			fs.writeFileSync(
+				consumer,
+				[
+					'import {defineConfig} from "backend-doctor-cli";',
+					'export default defineConfig({categories:{Security:"error"}});',
+					"// @ts-expect-error Unknown categories must still be rejected.",
+					'defineConfig({categories:{Imaginary:"error"}});',
+				].join("\n"),
+			);
+			const program = ts.createProgram([consumer], {
+				module: ts.ModuleKind.NodeNext,
+				moduleResolution: ts.ModuleResolutionKind.NodeNext,
+				strict: true,
+				noEmit: true,
+				skipLibCheck: false,
+				types: [],
+			});
+			expect(
+				ts
+					.getPreEmitDiagnostics(program)
+					.map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n")),
+			).toEqual([]);
+		} finally {
+			fs.rmSync(root, { recursive: true, force: true });
+		}
+	});
 	it("packs exactly the pinned file set", { timeout: 30000 }, async () => {
 		const { stdout } = await execFileAsync(
 			"npm",

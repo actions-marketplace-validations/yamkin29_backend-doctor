@@ -69,9 +69,16 @@ Under interop, a module **without** a default export exposes a *virtual*
 
 ### tsup
 
+- Adding an internal console entry to the same declaration build as index can
+  create a hashed shared `.d.ts` chunk. A files allowlist can omit that chunk
+  while its tarball pin still passes, breaking consumers of defineConfig.
+  Use `dts: { entry: { index: "src/index.ts" } }`: only the public library needs
+  declarations. Check a consumer copied from exactly the packed file set with
+  skipLibCheck disabled, including a negative category-type assertion.
+
 - Object-form `entry` (`{ "bin/backend-doctor": "src/bin/…" }`) to preserve
   `dist/bin/` layout; array form flattens.
-- `dts: true` required for `exports.types`.
+- Enable `dts` for the public entry required by `exports.types`.
 - Shebang: keep `#!/usr/bin/env node` in the bin **source**; a global `banner` would
   also stamp the library entry.
 - `external: ["jiti"]` — its loader machinery must run as the real dependency.

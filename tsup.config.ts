@@ -15,7 +15,9 @@ export const buildOptions: Options = {
 	clean: true,
 	sourcemap: false,
 	splitting: false,
-	dts: true,
+	// Only the public library needs declarations. Building declarations for the
+	// internal console too creates shared type chunks outside the published files.
+	dts: { entry: { index: "src/index.ts" } },
 	// jiti ships its own loader machinery; keep it external so config loading
 	// uses the real runtime dependency instead of a bundled copy.
 	external: ["jiti", "ink", "react", "react/jsx-runtime"],
