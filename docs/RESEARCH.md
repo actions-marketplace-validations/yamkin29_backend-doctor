@@ -375,11 +375,12 @@ Under interop, a module **without** a default export exposes a *virtual*
 ### Config/env pack (spec 014)
 
 
-- **The repo `.gitignore` ignores `.env` and `.env.*` at every depth.**
-  Fixture dotenv files under `tests/fixtures/` must be staged with
-  `git add -f` — a plain `git add` silently skips them and CI fails on a
-  fresh clone. zsh note: globs do not match dotfiles, so add the fixture
-  directory (`git add -f <dir>/`), not `.env*`.
+- **Dotenv fixtures need deliberate ignore rules.** The root `.gitignore`
+  allows `.env.example` / `.env.*.example`, the config-rule dotenv fixtures
+  and `evals/nest-bad/.env`. A fixture's own `.gitignore` still takes precedence:
+  `no-committed-env/valid/` intentionally ignores its dotenv files to test
+  coverage, so new dotenv files there still need `git add -f <file>`.
+  Keep that fixture-local rule intact; it is test input.
 - **vitest collected a fixture named `*.test.ts` as a test suite** ("No
   test suite found") — `include: ["tests/**/*.test.ts"]` reaches into
   `tests/fixtures/`. `vitest.config.ts` now has
@@ -547,11 +548,10 @@ Under interop, a module **without** a default export exposes a *virtual*
   the legacy `entry.kind` accessor emits DEP0152, and `detail` is missing
   from @types/node's `PerformanceEntry` — cast. Constants:
   `NODE_PERFORMANCE_GC_MINOR 1 / MAJOR 4 / INCREMENTAL 8 / WEAKCB 16`.
-- **A fixture-local `node_modules/` needs `git add -f`.** The root
-  `.gitignore`'s `node_modules/` pattern matches at every depth, so
-  `tests/fixtures/probe/node_modules/@prisma/client/` silently skips a
-  plain `git add` and CI fails on a fresh clone — the spec 014 `.env`
-  lesson's exact twin; add the directory with `-f`.
+- **The handwritten Prisma client is a tracked fixture.** The root `.gitignore`
+  explicitly allows `tests/fixtures/probe/node_modules/@prisma/client/`, so new
+  mock-client files can use ordinary `git add`. Other packages in that fixture's
+  `node_modules/`, as well as real dependency installations, remain ignored.
 
 ### Combined report (spec 021)
 
