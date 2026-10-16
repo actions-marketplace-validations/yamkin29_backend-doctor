@@ -226,7 +226,7 @@ npx backend-doctor-cli@latest ci install
 ## Runtime probe
 
 Prisma collection has a specific version/generator/loading boundary. See the
-[verified compatibility matrix](docs/PRISMA_COMPATIBILITY.md) before interpreting
+[verified compatibility matrix](https://github.com/yamkin29/backend-doctor/blob/main/docs/PRISMA_COMPATIBILITY.md) before interpreting
 query counts; the Prisma 7 standard generator requires a separate loader feature.
 
 Static analysis misses what only shows up while the process runs. The probe
@@ -301,10 +301,10 @@ pnpm build       # tsup → dist/
 pnpm docs:rules  # rule-docs ↔ registry drift check
 ```
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the
+Contributions are welcome — see [CONTRIBUTING.md](https://github.com/yamkin29/backend-doctor/blob/main/CONTRIBUTING.md) for the
 setup, the rule-authoring guide and the project's working rules. Every
-shipped feature has its design history in [docs/specs/](docs/specs/).
+shipped feature has its design history in [docs/specs/](https://github.com/yamkin29/backend-doctor/tree/main/docs/specs).
 
 ## License
 
-[MIT](./LICENSE)
+[MIT](https://github.com/yamkin29/backend-doctor/blob/main/LICENSE)

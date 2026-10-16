@@ -1,4 +1,4 @@
-const apiKey = "sk_live_9fK3pXwR7vTqzLm5Yh8Cd1BnJ2";
+const apiKey = "synthetic-example-0123456789abcdef";
 
 export function client(): string {
 	return apiKey;
