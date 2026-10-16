@@ -720,6 +720,23 @@ interface PrismaMiddlewareApi {
 	) => void;
 }
 
+interface PrismaQueryOperation {
+	model?: string;
+	operation: string;
+	args: unknown;
+	query: (args: unknown) => Promise<unknown>;
+}
+
+interface PrismaInstrumentationApi {
+	$use?: PrismaMiddlewareApi["$use"];
+	$extends?: (extension: {
+		name: string;
+		query: {
+			$allOperations: (operation: PrismaQueryOperation) => Promise<unknown>;
+		};
+	}) => PrismaInstrumentationApi;
+}
+
 const DB_MARKER = "__backendDoctorProbeDbWrapped";
 // CJS require("@prisma/client") arrives as the bare specifier; an ESM named
 // import arrives as the resolved absolute path (verified, Node 22) — match
@@ -728,8 +745,8 @@ const PRISMA_MODULE_IDS = ["@prisma/client", ".prisma/client"] as const;
 
 /**
  * Intercepts @prisma/client and .prisma/client loads and wraps the exported
- * PrismaClient class as a subclass whose constructor installs one $use
- * middleware per instance: the middleware times the query, records a
+ * PrismaClient class as a subclass whose constructor installs one query
+ * extension (modern clients) or middleware (legacy clients). It records a
  * db.query event, and increments the enclosing request's ALS store. The
  * idempotency marker sits on the CLASS, not the exports — @prisma/client
  * copies the generated client's properties, so a wrapped class re-appears on
@@ -740,6 +757,10 @@ function installDbCollector(
 	requestContext: asyncHooks.AsyncLocalStorage<{ dbQueries: number }>,
 ): void {
 	let disabled = false;
+	const wrappedClasses = new WeakMap<object, object>();
+	notice(
+		"db-query coverage: Prisma 7 prisma-client generated paths are unsupported; only @prisma/client and .prisma/client loads are intercepted",
+	);
 
 	function recordQuery(
 		params: PrismaQueryParams,
@@ -769,57 +790,85 @@ function installDbCollector(
 		if ((Client as unknown as Record<string, unknown>)[DB_MARKER] === true) {
 			return;
 		}
-		const prototype = (Client as { prototype?: Record<string, unknown> })
-			.prototype;
-		if (
-			prototype === undefined ||
-			prototype === null ||
-			typeof prototype.$use !== "function"
-		) {
-			disabled = true;
-			notice("prisma client without $use found; db-query collector disabled");
+		const existing = wrappedClasses.get(Client);
+		if (existing) {
+			record.PrismaClient = existing;
 			return;
+		}
+		async function observe(
+			params: PrismaQueryParams,
+			execute: () => Promise<unknown>,
+		): Promise<unknown> {
+			if (disabled) return execute();
+			const store = requestContext.getStore();
+			if (store !== undefined) store.dbQueries++;
+			const startedAt = performance.now();
+			try {
+				return await execute();
+			} finally {
+				recordQuery(params, startedAt, store !== undefined);
+			}
 		}
 		class WrappedPrismaClient extends (Client as new (
 			...args: unknown[]
-		) => PrismaMiddlewareApi) {
+		) => PrismaInstrumentationApi) {
 			constructor(...args: unknown[]) {
 				super(...args);
-				this.$use((params, next) => {
-					if (disabled) return next(params);
-					const store = requestContext.getStore();
-					if (store !== undefined) store.dbQueries++;
-					const startedAt = performance.now();
-					const result = next(params);
-					if (
-						result !== null &&
-						typeof result === "object" &&
-						typeof (result as Promise<unknown>).then === "function"
-					) {
-						return (result as Promise<unknown>).then(
-							(value) => {
-								recordQuery(params, startedAt, store !== undefined);
-								return value;
+				if (disabled) return;
+				// Real clients expose APIs on an instance proxy, not their prototype.
+				// Keep PrismaPromise laziness by observing inside the public callback.
+				try {
+					if (typeof this.$use === "function") {
+						this.$use((params, next) => observe(params, () => next(params)));
+					} else if (typeof this.$extends === "function") {
+						const extended = this.$extends({
+							name: "backend-doctor-probe",
+							query: {
+								$allOperations: ({
+									model,
+									operation,
+									args: queryArgs,
+									query,
+								}) =>
+									observe({ model, action: operation.replace(/^\$/, "") }, () =>
+										query(queryArgs),
+									),
 							},
-							(error: unknown) => {
-								recordQuery(params, startedAt, store !== undefined);
-								throw error;
+						});
+						// Prisma hides $on on extensions with a non-configurable property.
+						// Use the native client as the target to retain that public API.
+						// biome-ignore lint/correctness/noConstructorReturn: The native-target proxy preserves subclass initialization and public Prisma APIs, verified with a real client.
+						return new Proxy(this, {
+							get(target, key, receiver) {
+								return key === "$on"
+									? Reflect.get(target, key, receiver)
+									: Reflect.get(extended, key, extended);
 							},
+						});
+					} else {
+						disabled = true;
+						notice(
+							"prisma client without $use or $extends found; db-query collector disabled",
 						);
 					}
-					recordQuery(params, startedAt, store !== undefined);
-					return result;
-				});
+				} catch (error) {
+					disabled = true;
+					notice(`db-query collector disabled (${(error as Error).message})`);
+				}
 			}
 		}
 		Object.defineProperty(WrappedPrismaClient, DB_MARKER, { value: true });
+		wrappedClasses.set(Client, WrappedPrismaClient);
 		record.PrismaClient = WrappedPrismaClient;
 	}
 
 	const isTarget = (request: unknown): boolean => {
 		const id = String(request);
 		return PRISMA_MODULE_IDS.some(
-			(target) => id === target || id.includes(`node_modules/${target}/`),
+			(target) =>
+				id === target ||
+				id.startsWith(`${target}/`) ||
+				id.includes(`node_modules/${target}/`),
 		);
 	};
 

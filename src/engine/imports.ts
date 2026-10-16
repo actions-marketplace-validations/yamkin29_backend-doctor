@@ -1,10 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { ModuleResolution } from "./parser/types.js";
 
 /**
  * The import-graph machinery for project rules (spec 013, design §1).
- * Pure path math over the analyzed file list — no parser involvement
- * (constitution §4): edges come from each file's module specifiers, and
+ * Compiler-independent graph over the analyzed set: sources may supply
+ * resolution evidence through the parser boundary (spec 026); structural
+ * sources retain relative path resolution. Edges come from module specifiers, and
  * everything downstream (entries, cycles, reachability) derives from the
  * same adjacency. All iteration that produces output walks sorted keys.
  */
@@ -16,11 +18,13 @@ import path from "node:path";
 export interface ImportEdgeSource {
 	readonly filePath: string;
 	getModuleSpecifiers(): string[];
+	resolveModuleSpecifier?(specifier: string): ModuleResolution;
 }
 
 export interface ImportGraph {
 	/** Analyzed file paths (absolute, sorted). */
 	readonly files: string[];
+	readonly failures: { filePath: string; reason: string }[];
 	/** Resolved edge targets of the file (absolute, sorted). */
 	edgesOf(filePath: string): string[];
 	/** Resolve one specifier from one file against the analyzed set. */
@@ -81,15 +85,37 @@ export function buildImportGraph(
 	const files = sources.map((source) => source.filePath).sort();
 	const analyzed = new Set(files);
 	const edges = new Map<string, string[]>();
+	const sourceByPath = new Map(
+		sources.map((source) => [source.filePath, source]),
+	);
+	const failures: { filePath: string; reason: string }[] = [];
+	const resolvedByFile = new Map<string, Map<string, string | undefined>>();
 
 	for (const filePath of files) {
-		const source = sources.find((candidate) => candidate.filePath === filePath);
+		const source = sourceByPath.get(filePath);
 		if (!source) continue;
 		const targets = new Set<string>();
+		const resolutions = new Map<string, string | undefined>();
 		for (const specifier of source.getModuleSpecifiers()) {
-			const target = resolveSpecifier(filePath, specifier, analyzed);
+			if (resolutions.has(specifier)) continue;
+			const evidence = source.resolveModuleSpecifier?.(specifier);
+			let target =
+				evidence?.kind === "internal" && analyzed.has(evidence.filePath)
+					? evidence.filePath
+					: resolveSpecifier(filePath, specifier, analyzed);
+			if (evidence?.kind === "internal" && !analyzed.has(evidence.filePath)) {
+				failures.push({
+					filePath,
+					reason: `internal module "${specifier}" resolves outside the analyzed file set`,
+				});
+				target = undefined;
+			} else if (evidence?.kind === "unresolved" && !target) {
+				failures.push({ filePath, reason: evidence.reason });
+			}
+			resolutions.set(specifier, target);
 			if (target && target !== filePath) targets.add(target);
 		}
+		resolvedByFile.set(filePath, resolutions);
 		edges.set(filePath, [...targets].sort());
 	}
 
@@ -97,9 +123,18 @@ export function buildImportGraph(
 
 	return {
 		files,
+		failures,
 		edgesOf: (filePath) => edges.get(filePath) ?? [],
-		resolve: (fromFile, specifier) =>
-			resolveSpecifier(fromFile, specifier, analyzed),
+		resolve: (fromFile, specifier) => {
+			const cached = resolvedByFile.get(fromFile);
+			if (cached?.has(specifier)) return cached.get(specifier);
+			const evidence = sourceByPath
+				.get(fromFile)
+				?.resolveModuleSpecifier?.(specifier);
+			if (evidence?.kind === "internal")
+				return analyzed.has(evidence.filePath) ? evidence.filePath : undefined;
+			return resolveSpecifier(fromFile, specifier, analyzed);
+		},
 		cycles: () => cycleChains.map((chain) => [...chain]),
 		reachableFrom: (entries) => reachableFrom(entries, edges),
 	};

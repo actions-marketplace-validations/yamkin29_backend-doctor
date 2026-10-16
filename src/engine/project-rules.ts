@@ -63,6 +63,8 @@ export interface RunProjectRulesOptions {
 	scanRoot: string;
 	detectedFrameworks: readonly string[];
 	packageRoot: string;
+	/** Missing source/config evidence makes absence-based conclusions unsafe. */
+	incompleteReasons?: readonly string[];
 }
 
 export interface ProjectRuleRunOutcome {
@@ -85,6 +87,19 @@ export function runProjectRules(
 	const diagnostics: Diagnostic[] = [];
 	const skippedChecks: SkippedCheck[] = [];
 	if (surface.failure) skippedChecks.push(surface.failure);
+	for (const failure of graph.failures) {
+		skippedChecks.push({
+			check: "module-resolution",
+			reason: `${relativeTo(opts.scanRoot, failure.filePath)}: ${failure.reason}`,
+		});
+	}
+	const incomplete = [
+		...(opts.incompleteReasons ?? []),
+		...graph.failures.map(
+			(failure) =>
+				`${relativeTo(opts.scanRoot, failure.filePath)}: ${failure.reason}`,
+		),
+	];
 
 	for (const rule of rules) {
 		if (
@@ -102,6 +117,20 @@ export function runProjectRules(
 			config: opts.config,
 		});
 		if (severity === "off") continue;
+		if (
+			incomplete.length > 0 &&
+			[
+				"backend-doctor/unused-file",
+				"backend-doctor/unused-export",
+				"backend-doctor/unused-dependency",
+			].includes(rule.id)
+		) {
+			skippedChecks.push({
+				check: rule.id,
+				reason: `skipped: incomplete import graph (${incomplete.join("; ")})`,
+			});
+			continue;
+		}
 
 		const findings: ProjectReportInput[] = [];
 		const project: ProjectRuleContext = {

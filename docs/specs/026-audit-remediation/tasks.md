@@ -1,0 +1,122 @@
+# Tasks 026 — Audit remediation
+
+- [x] **T0. Prepare and prove real Prisma compatibility (AC-10–13).** No TDD for
+  pinned test manifests/configuration. Run public-API experiments against real
+  SQLite clients before finalizing design; record exact results. Stop and present
+  any additional loader scope or behavior contradiction to the user.
+- [x] **T1. Re-export edges (AC-1–2, 15–16).** RED: adapter references and graph
+  rule regressions. GREEN: collect module-bearing export declarations.
+- [x] **T2. Alias resolution (AC-3–5, 15–16).** RED: config tree/graph tests.
+  GREEN: compiler resolution in parser boundary and visible graph limitations.
+- [x] **T3. Parse failures and graph safety (AC-6–7).** RED: malformed mixed trees
+  and unsupported unused conclusions. GREEN: syntax failures and suppression.
+- [x] **T4. Pretty coverage (AC-8–9, 16).** RED: skipped/empty/scoped report tests.
+  GREEN: analyzed counts and reasons using existing JSON fields.
+- [x] **T5. Prisma instrumentation (AC-10–13, 16).** RED: real-client query/request
+  count and host behavior regressions. GREEN: the verified public interception
+  surface; legacy path, duplicate prevention and unsupported notice.
+- [x] **T6. Documentation and close-out (AC-14–16).** Review/test shown commands;
+  run full suite, typecheck, format/re-read, lint, build and rule-doc validation;
+  live smoke scans/probes. Check audit items only with evidence; record deviations;
+  set spec Implemented and PLAN Done only when all ACs are satisfied.
+
+## Deviations & notes
+
+- 2026-10-13: User approved spec recommendations OQ-1–4. Spec 025 remains an
+  unapproved draft; no GitBot files are part of implementation commits.
+- Baseline: 755 tests passed with local HTTP tests outside the restricted sandbox;
+  previous failures were `listen EPERM`. Repeat required verification in the same
+  permitted environment when necessary.
+- T1: first integration test run had an incorrect config import; corrected the
+  harness before observing the intended unused-file RED. Re-export cycle positions
+  now use the declaration rather than a fallback location.
+- T2: existing graph tests caught loss of ad-hoc `graph.resolve()` for specifiers
+  absent from a source's reference list. Restored that behavior; compiler results
+  for actual references remain cached. Seven new alias cases observed RED, then
+  the full suite passed (764 tests). Conservative suppression covers enabled unused
+  rules; resolved cycles and healthy source rules still run.
+- T3: malformed TS/TSX and mixed-tree tests observed RED. The pre-existing
+  unreadable-file integration assertion was updated to the approved suppression
+  behavior (read notice plus three unused-rule notices, two healthy findings).
+  Unreadable config (a directory at tsconfig.json) characterizes the compiler's
+  already-supported failure channel; it required no further implementation.
+  Syntax validation uses a no-lib/no-resolve compiler program over existing ASTs;
+  a full ts-morph program unnecessarily loaded libs and slowed the suite. The
+  syntax-only refactor retains all 769 passing tests and avoids extra discovery.
+- T4: counts/skips/zero-file pretty tests observed RED, then passed. The new
+  all-format alias/barrel CLI byte-equality case is characterization of T1/T2;
+  it was already green before the reporter change. JSON/JSONL shapes are untouched.
+- T5: both real-client runtime tests observed RED (zero query events), then GREEN
+  (11 operations, 9 attributed to one HTTP request) for CJS and ESM imports. Tests
+  include application query/client extensions, subclass fields/lifecycle, lazy batch
+  and interactive transactions, uniqueness error, exact rollback error identity,
+  rollback state, raw operations, cleanup and no query payload recording.
+  Real APIs live on instance proxies, not the class prototype. Bare Prisma subpaths
+  needed the existing target-family match; a WeakMap reuses the same wrapper across
+  generated export copies. The new-loader scope for Prisma 7 remains deferred.
+  Pure test configuration: a separate `test:prisma` suite and CI preparation use
+  pinned tooling; missing tooling fails that suite instead of silently skipping it.
+- T5 compatibility contradiction after the first green commit: Prisma 6.14
+  `$extends` hides native `$on` (non-configurable undefined on its returned proxy).
+  Public client-extension reintroduction also throws a Proxy invariant TypeError.
+  Thus the first constructor substitution could break host event subscriptions,
+  despite passing query/transaction tests. Production changes were paused under
+  AGENTS.md's contradiction rule. A design experiment using a Proxy over the native
+  client, forwarding query access to the extended client and `$on` to native,
+  preserved method availability and subscription/disconnect. Asked the user to
+  approve this correction before implementing it.
+- T5 correction: the user explicitly approved the native-target Proxy. The real
+  CJS/ESM subscription regression observed RED (`$on` was undefined), then GREEN
+  with actual query-event delivery. All existing results/counts/transaction checks
+  pass. Added matching uninstrumented runs as a native behavior baseline.
+  Private subclass fields also work on the instrumented service. An explicit
+  application extension calling a private-field method on its own extension
+  receiver fails in native Prisma as well; the fixture calls the service through
+  its original reference instead. This is a fixture correction, not a hidden
+  compatibility fix. No private Prisma API or application edit is required.
+- T6: README, CLI scan help, shipped skill, RESEARCH and a precise Prisma matrix
+  now describe actual coverage. The help-extension e2e case observed RED then
+  GREEN. The skill coverage assertion characterizes already-corrected prose;
+  documentation/manifests and close-out status changes have no runtime TDD cycle.
+  All audit items and both UX notes are checked against evidence. Spec 027 is a
+  separate draft for the user-requested Prisma 7 loader, with open questions and
+  no implementation authorization. Spec 025 stays outside these commits.
+
+## Final verification
+
+- `pnpm test`: 776 passing tests across 74 files; existing golden/precision,
+  report/exit-code/config/export/package and probe contracts remain green.
+- `pnpm test:prisma`: two passing real-client CJS/ESM cases, each with a native
+  baseline and double-preloaded instrumented run. Native `$on` receives real events;
+  private subclass fields, lifecycle, extensions, laziness, results/error identity,
+  rollback, disconnect and exact counts remain valid. No query payload is recorded.
+- `pnpm exec tsc --noEmit`, `pnpm format` followed by rereading edited files,
+  `pnpm lint`, `pnpm build`, `pnpm docs:rules`: passed; all 41 rule docs match.
+- Live good/bad eval scans: 12 files/zero findings and 18 files/44 warnings,
+  zero skipped checks; repeated JSON byte-identical. Mixed alias/barrel project
+  continues on three healthy files and visibly reports two read failures plus
+  three suppressed unused checks, with no speculative findings.
+- Live production `probe` of the Prisma 6.14 CJS fixture: host exit 0/HTTP 200,
+  11 query operations, 9 attributed to `GET /proof`; findings.json contains
+  the exact endpoint count and a possible-N+1 warning at threshold 4. Output inspected.
+- Diff review: schema versions, public exports, runtime dependencies, config
+  names/precedence and exit policies remain unchanged. CI preparation is configured;
+  no remote CI run or publication is claimed by this local verification.
+
+## Compatibility evidence
+
+2026-10-13, Node 22.13.1 on macOS arm64:
+
+- Prisma 6.14.0 / prisma-client-js: real SQLite proof passed 9 operations,
+  including 2 attributed interactive-transaction queries. Subclass lifecycle/methods,
+  app extension, lazy batch transaction, raw query, unique-constraint rejection and
+  disconnect passed. Native and extended clients both fail `instanceof` on the
+  subclass; methods survive in both.
+- Prisma 7.0.0 / prisma-client / moduleFormat cjs / better-sqlite3 adapter 7.0.0:
+  real create/count/delete queries succeeded. Generated client compiled with existing
+  tsup. Its class-bearing load `./generated/built/client.cjs` does not match either
+  existing hook target; zero class-bearing loads intercepted. This is a verified
+  limitation, not verified zero-query coverage.
+- Per spec OQ-4, asked the user to choose a separate loader feature versus expanded
+  current scope. The user chose the separate specification; implement Prisma 6.14
+  now and explicitly document the Prisma 7 standard-generator limitation.

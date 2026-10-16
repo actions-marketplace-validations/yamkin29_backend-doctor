@@ -48,9 +48,19 @@ export interface ScanResult {
  * rule execution are deterministic; every per-file or per-rule failure is
  * recorded instead of failing the scan (constitution §8).
  */
-export async function runScan(input: ScanInput): Promise<ScanResult> {
+export async function runScan(
+	input: ScanInput,
+	onProgress?: (stage: string) => void | Promise<void>,
+): Promise<ScanResult> {
 	const target = path.resolve(input.directory);
 	const { scope } = input;
+	const progress = async (stage: string) => {
+		if (onProgress) {
+			await onProgress(stage);
+			await new Promise<void>((resolve) => setImmediate(resolve));
+		}
+	};
+	if (onProgress) await progress("Collecting files");
 
 	const collected = collectFiles({
 		target,
@@ -65,8 +75,14 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 		scope === undefined
 			? collected
 			: collected.filter((filePath) => scope.files.has(filePath));
+	const packageRoot = findPackageRoot(target);
+	if (onProgress) await progress("Parsing source");
 	const adapter = new TsMorphParserAdapter();
-	const { files, failures } = adapter.createProject(analyzed);
+	const {
+		files,
+		failures,
+		resolutionFailures = [],
+	} = adapter.createProject(analyzed, { packageRoot });
 
 	const diagnostics: Diagnostic[] = [];
 	const skippedChecks: SkippedCheck[] = [];
@@ -78,7 +94,13 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 		});
 	}
 
-	const packageRoot = findPackageRoot(target);
+	for (const failure of resolutionFailures) {
+		skippedChecks.push({
+			check: "module-resolution",
+			reason: `${relativeTo(target, failure.filePath)}: ${failure.reason}`,
+		});
+	}
+	if (onProgress) await progress("Detecting frameworks");
 	const detection = detectFrameworks({
 		packageRoot,
 		scanRoot: target,
@@ -95,6 +117,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 		if (built.failure) skippedChecks.push(built.failure);
 	}
 
+	if (onProgress) await progress("Checking file rules");
 	for (const file of files) {
 		const outcome = runRules({
 			file,
@@ -133,6 +156,7 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 	// semantics need the full tree, so partial scopes skip the pass —
 	// visibly, never silently (spec 015 AC-9, constitution §8).
 	if (scope === undefined) {
+		if (onProgress) await progress("Checking project rules");
 		const projectOutcome = runProjectRules({
 			files,
 			config: input.config,
@@ -140,6 +164,10 @@ export async function runScan(input: ScanInput): Promise<ScanResult> {
 			scanRoot: target,
 			detectedFrameworks: detection.frameworks,
 			packageRoot,
+			incompleteReasons: [...failures, ...resolutionFailures].map(
+				(failure) =>
+					`${relativeTo(target, failure.filePath)}: ${failure.reason}`,
+			),
 		});
 		diagnostics.push(...projectOutcome.diagnostics);
 		skippedChecks.push(...projectOutcome.skippedChecks);

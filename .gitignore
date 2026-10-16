@@ -1,10 +1,34 @@
+# Dependencies
 node_modules/
+
+# Build output, coverage and npm archives
 dist/
 coverage/
+/backend-doctor-cli-*.tgz
+
+# Logs and local tooling
 *.log
 .DS_Store
-.env
-.env.*
 .idea/
 .zcode/
+
+# Environment files; commit only templates with placeholder values
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local runtime traces
 .backend-doctor/
+
+# Intentional dotenv fixtures; fixture-local .gitignore rules still apply
+!/evals/nest-bad/.env
+!/tests/fixtures/config/no-committed-env/**/.env
+!/tests/fixtures/config/no-committed-env/**/.env.*
+
+# Handwritten Prisma client fixture; keep other dependencies ignored
+!/tests/fixtures/probe/node_modules/
+/tests/fixtures/probe/node_modules/*
+!/tests/fixtures/probe/node_modules/@prisma/
+/tests/fixtures/probe/node_modules/@prisma/*
+!/tests/fixtures/probe/node_modules/@prisma/client/

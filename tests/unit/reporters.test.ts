@@ -13,6 +13,64 @@ const emptyResult: ScanResult = {
 };
 
 describe("renderPretty", () => {
+	it("shows zero coverage and all skip reasons even without findings, keeping JSONL empty", () => {
+		const doc = buildReport({
+			...emptyResult,
+			projects: [
+				{
+					packageRoot: "/tmp/proj",
+					frameworks: [],
+					analyzedFiles: [],
+					analyzedFileCount: 0,
+					complete: true,
+					skippedChecks: [
+						{
+							check: "read",
+							reason: "broken.ts: syntax error at 1:10: expected token",
+						},
+						{
+							check: "backend-doctor/unused-file",
+							reason: "skipped: incomplete import graph",
+						},
+					],
+				},
+			],
+		});
+		expect(renderPretty(doc)).toBe(
+			[
+				"backend-doctor scan — full mode",
+				"Directory: /tmp/proj",
+				"Analyzed: 0 supported TypeScript files (full scope)",
+				"Coverage: no supported TypeScript source files were analyzed.",
+				"Skipped checks (2):",
+				"  read: broken.ts: syntax error at 1:10: expected token",
+				"  backend-doctor/unused-file: skipped: incomplete import graph",
+				"",
+				"Summary: 0 errors, 0 warnings (0 issues)",
+				"",
+			].join("\n"),
+		);
+		expect(renderJsonl(doc)).toBe("");
+	});
+	it("shows analyzed file counts for nonempty coverage", () => {
+		const doc = buildReport({
+			...emptyResult,
+			projects: [
+				{
+					packageRoot: "/tmp/proj",
+					frameworks: [],
+					analyzedFiles: ["main.ts"],
+					analyzedFileCount: 1,
+					complete: false,
+					skippedChecks: [],
+				},
+			],
+		});
+		expect(renderPretty(doc)).toContain(
+			"Analyzed: 1 supported TypeScript file (partial scope)",
+		);
+		expect(renderPretty(doc)).not.toContain("Coverage:");
+	});
 	it("renders an empty scan with a zero-issue summary", () => {
 		const doc = buildReport(emptyResult);
 		expect(renderPretty(doc)).toBe(

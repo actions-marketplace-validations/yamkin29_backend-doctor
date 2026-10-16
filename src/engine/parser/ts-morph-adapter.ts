@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
+import { Node, Project, type SourceFile, SyntaxKind, ts } from "ts-morph";
 import type {
 	FileLoadFailure,
+	ModuleResolution,
 	ParserAdapter,
 	ProjectLoadResult,
 	SourceFilePosition,
@@ -11,25 +12,65 @@ import type {
 
 /**
  * The only module allowed to import ts-morph at runtime (constitution §4,
- * spec 003 open question 2). Files are loaded from explicit paths — no
- * tsconfig is consulted in F003 (design decision 3).
+ * spec 003 open question 2). Files are loaded from explicit paths. Spec 026
+ * consults tsconfig only for resolution, never to select the analyzed set.
  */
 export class TsMorphParserAdapter implements ParserAdapter {
 	readonly name = "ts-morph";
 
-	createProject(filePaths: string[]): ProjectLoadResult {
+	createProject(
+		filePaths: string[],
+		options?: { packageRoot: string },
+	): ProjectLoadResult {
 		const project = new Project({
 			skipAddingFilesFromTsConfig: true,
 			skipFileDependencyResolution: true,
 		});
 		const files: SourceFileView[] = [];
 		const failures: FileLoadFailure[] = [];
+		const resolutionFailures: FileLoadFailure[] = [];
+		const configs = new Map<string, ts.CompilerOptions>();
+		const loaded: SourceFile[] = [];
 
 		for (const filePath of filePaths) {
 			const sourceFile = this.loadSourceFile(project, filePath, failures);
-			if (sourceFile) files.push(new TsMorphSourceFileView(sourceFile));
+			if (sourceFile) loaded.push(sourceFile);
 		}
-		return { files, failures };
+		// A syntax-only compiler program reuses our ASTs and never loads libs or
+		// dependencies. Semantic/type errors are outside this analyzer's scope.
+		const byPath = new Map<string, ts.SourceFile>(
+			loaded.map((file) => [file.getFilePath(), file.compilerNode]),
+		);
+		const syntaxOptions = { noLib: true, noResolve: true };
+		const program = ts.createProgram([...byPath.keys()], syntaxOptions, {
+			...ts.createCompilerHost(syntaxOptions),
+			getSourceFile: (fileName) => byPath.get(path.resolve(fileName)),
+		});
+		for (const sourceFile of loaded) {
+			const filePath = sourceFile.getFilePath();
+			const syntaxErrors = program.getSyntacticDiagnostics(
+				sourceFile.compilerNode,
+			);
+			const first = syntaxErrors[0];
+			if (first) {
+				const position = sourceFile.getLineAndColumnAtPos(first.start ?? 0);
+				failures.push({
+					filePath,
+					reason: `syntax error at ${position.line}:${position.column}: ${ts.flattenDiagnosticMessageText(first.messageText, " ")}`,
+				});
+				continue;
+			}
+			const compilerOptions = options
+				? compilerOptionsFor(
+						filePath,
+						options.packageRoot,
+						configs,
+						resolutionFailures,
+					)
+				: undefined;
+			files.push(new TsMorphSourceFileView(sourceFile, compilerOptions));
+		}
+		return { files, failures, resolutionFailures };
 	}
 
 	positionOf(file: SourceFileView, pos: number): SourceFilePosition {
@@ -64,7 +105,49 @@ export class TsMorphParserAdapter implements ParserAdapter {
 }
 
 class TsMorphSourceFileView implements SourceFileView {
-	constructor(readonly sourceFile: SourceFile) {}
+	readonly resolveModuleSpecifier?: (specifier: string) => ModuleResolution;
+	constructor(
+		readonly sourceFile: SourceFile,
+		compilerOptions?: ts.CompilerOptions,
+	) {
+		if (compilerOptions) {
+			const cache = ts.createModuleResolutionCache(
+				path.dirname(this.filePath),
+				(name) => name,
+				compilerOptions,
+			);
+			this.resolveModuleSpecifier = (specifier) => {
+				const resolved = ts.resolveModuleName(
+					specifier,
+					this.filePath,
+					compilerOptions,
+					ts.sys,
+					cache,
+				).resolvedModule;
+				if (resolved) {
+					if (resolved.isExternalLibraryImport) return { kind: "external" };
+					return {
+						kind: "internal",
+						filePath: path.resolve(resolved.resolvedFileName),
+					};
+				}
+				const declaredAlias = Object.keys(compilerOptions.paths ?? {}).some(
+					(key) => matchesAlias(key, specifier),
+				);
+				if (
+					declaredAlias ||
+					specifier.startsWith("./") ||
+					specifier.startsWith("../")
+				) {
+					return {
+						kind: "unresolved",
+						reason: `could not resolve internal module "${specifier}"`,
+					};
+				}
+				return { kind: "external" };
+			};
+		}
+	}
 
 	get filePath(): string {
 		return this.sourceFile.getFilePath();
@@ -90,6 +173,11 @@ class TsMorphSourceFileView implements SourceFileView {
 				specifiers.push(node.getModuleSpecifierValue());
 				return;
 			}
+			if (Node.isExportDeclaration(node)) {
+				const specifier = node.getModuleSpecifierValue();
+				if (specifier !== undefined) specifiers.push(specifier);
+				return;
+			}
 			if (Node.isCallExpression(node)) {
 				const expression = node.getExpression();
 				const isRequire =
@@ -109,4 +197,77 @@ class TsMorphSourceFileView implements SourceFileView {
 	getText(node?: Node): string {
 		return node ? node.getText() : this.sourceFile.getFullText();
 	}
+}
+
+/** Pattern recognition is only for loud failures; TS decides target precedence. */
+function matchesAlias(pattern: string, specifier: string): boolean {
+	const star = pattern.indexOf("*");
+	if (star === -1) return pattern === specifier;
+	return (
+		specifier.length >= pattern.length - 1 &&
+		specifier.startsWith(pattern.slice(0, star)) &&
+		specifier.endsWith(pattern.slice(star + 1))
+	);
+}
+
+function compilerOptionsFor(
+	filePath: string,
+	packageRoot: string,
+	cache: Map<string, ts.CompilerOptions>,
+	failures: FileLoadFailure[],
+): ts.CompilerOptions {
+	let boundary = path.resolve(packageRoot);
+	// A nested package must not inherit its parent's config accidentally.
+	for (
+		let dir = path.dirname(filePath);
+		dir !== boundary;
+		dir = path.dirname(dir)
+	) {
+		if (fs.existsSync(path.join(dir, "package.json"))) {
+			boundary = dir;
+			break;
+		}
+		if (path.dirname(dir) === dir) break;
+	}
+	let configPath: string | undefined;
+	for (let dir = path.dirname(filePath); ; dir = path.dirname(dir)) {
+		const candidate = path.join(dir, "tsconfig.json");
+		if (fs.existsSync(candidate)) {
+			configPath = candidate;
+			break;
+		}
+		if (dir === boundary || path.dirname(dir) === dir) break;
+	}
+	if (!configPath) return {};
+	const cached = cache.get(configPath);
+	if (cached) return cached;
+	const read = ts.readConfigFile(configPath, ts.sys.readFile);
+	const parsed = read.error
+		? undefined
+		: ts.parseJsonConfigFileContent(
+				read.config,
+				ts.sys,
+				path.dirname(configPath),
+				undefined,
+				configPath,
+			);
+	// File selection is ours; TS's empty include/files diagnostics do not affect
+	// compiler resolution. Other config errors must remain visible.
+	const errors = read.error
+		? [read.error]
+		: (parsed?.errors ?? []).filter(
+				(error) => error.code !== 18003 && error.code !== 18002,
+			);
+	for (const error of errors) {
+		failures.push({
+			filePath: configPath,
+			reason: ts
+				.flattenDiagnosticMessageText(error.messageText, " ")
+				.split(packageRoot)
+				.join("."),
+		});
+	}
+	const result = parsed?.options ?? {};
+	cache.set(configPath, result);
+	return result;
 }

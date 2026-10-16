@@ -62,6 +62,10 @@ function findImportNode(
 		if (declaration?.getModuleSpecifierValue() === specifier) {
 			found = declaration;
 		}
+		const reexport = node.asKind(SyntaxKind.ExportDeclaration);
+		if (reexport?.getModuleSpecifierValue() === specifier) {
+			found = reexport;
+		}
 		return undefined;
 	});
 	return found;

@@ -23,6 +23,29 @@ function write(relPath: string, content: string): string {
 }
 
 describe("TsMorphParserAdapter (AC-2)", () => {
+	it.each([
+		["broken.ts", "export function broken( {"],
+		["broken.tsx", "const view = <div>"],
+	])(
+		"skips syntax errors in %s while accepting semantic errors",
+		(name, text) => {
+			const broken = write(`src/${name}`, text ?? "");
+			const healthy = write(
+				"src/healthy.ts",
+				"const value: string = 123; missingType(value);",
+			);
+			const result = new TsMorphParserAdapter().createProject([
+				broken,
+				healthy,
+			]);
+			expect(result.files.map((file) => file.filePath)).toEqual([healthy]);
+			expect(result.failures).toHaveLength(1);
+			expect(result.failures[0]).toMatchObject({
+				filePath: broken,
+				reason: expect.stringMatching(/syntax error at \d+:\d+:/),
+			});
+		},
+	);
 	it("parses ts, tsx and mts files into source file views", () => {
 		const ts = write("src/index.ts", "const a = 1;\n");
 		const tsx = write("src/app.tsx", "const el = <div>hi</div>;\n");
@@ -142,5 +165,23 @@ describe("TsMorphParserAdapter (AC-2)", () => {
 		if (!view) throw new Error("expected the file to load");
 
 		expect(view.getModuleSpecifiers()).toEqual([]);
+	});
+
+	it("collects named, wildcard and namespace re-exports but not local exports", () => {
+		const file = write(
+			"src/barrel.ts",
+			[
+				'export { used } from "./named.js";',
+				'export * from "./all.js";',
+				'export * as ns from "./namespace.js";',
+				"const local = 1; export { local };",
+			].join("\n"),
+		);
+		const { files } = new TsMorphParserAdapter().createProject([file]);
+		expect(files[0]?.getModuleSpecifiers()).toEqual([
+			"./named.js",
+			"./all.js",
+			"./namespace.js",
+		]);
 	});
 });

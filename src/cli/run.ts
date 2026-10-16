@@ -40,7 +40,9 @@ export async function run(argv: string[]): Promise<number> {
 	let exit = 0;
 	program
 		.command("scan")
-		.description("Scan a project for issues.")
+		.description(
+			"Scan supported TypeScript source files (.ts, .tsx, .mts, .cts) for issues.",
+		)
 		.argument("[path]", "directory or file to scan (default: cwd)")
 		.addOption(
 			new Option("--format <format>", "output format: pretty|json|jsonl")
@@ -76,6 +78,11 @@ export async function run(argv: string[]): Promise<number> {
 			"merge runtime findings from a probe session directory (spec 021)",
 		)
 		.option("--config <path>", "load exactly this config file, skip discovery")
+		.option(
+			"--interactive",
+			"use the interactive console (requires a terminal)",
+		)
+		.option("--no-interactive", "print the regular report without the console")
 		.option(
 			"--dump-config",
 			"print the resolved config as JSON and exit without scanning",

@@ -168,12 +168,15 @@ describe("e2e: skipped checks stay visible (AC-2)", () => {
 				}>;
 			};
 			expect(doc.projects[0]?.complete).toBe(true);
-			expect(doc.projects[0]?.skippedChecks).toEqual([
-				{
-					check: "read",
-					reason: expect.stringContaining("src/secret.ts"),
-				},
-			]);
+			expect(doc.projects[0]?.skippedChecks).toHaveLength(4);
+			expect(doc.projects[0]?.skippedChecks).toEqual(
+				expect.arrayContaining([
+					{
+						check: "read",
+						reason: expect.stringContaining("src/secret.ts"),
+					},
+				]),
+			);
 		} finally {
 			fs.chmodSync(path.join(tmp, "src", "secret.ts"), 0o644);
 			fs.rmSync(tmp, { recursive: true, force: true });

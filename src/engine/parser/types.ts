@@ -37,6 +37,12 @@ export interface SourceFilePosition {
 	column: number;
 }
 
+/** Compiler-independent resolution evidence, consumed by graph construction. */
+export type ModuleResolution =
+	| { kind: "internal"; filePath: string }
+	| { kind: "external" }
+	| { kind: "unresolved"; reason: string };
+
 /** Parser-agnostic view of one parsed source file. */
 export interface SourceFileView {
 	/** Absolute path of the file. */
@@ -49,12 +55,14 @@ export interface SourceFileView {
 	 */
 	forEachDescendant(cb: (node: Node) => "skip" | undefined): void;
 	/**
-	 * Module specifiers referenced by the file: static imports, dynamic
+	 * Module specifiers referenced by the file: static imports/re-exports, dynamic
 	 * `import("…")` and `require("…")` calls. Occurrences in comments or
 	 * unrelated string literals are not module references and are excluded
 	 * (spec 004, code markers).
 	 */
 	getModuleSpecifiers(): string[];
+	/** Optional compiler-backed resolution; structural adapters may omit it. */
+	resolveModuleSpecifier?(specifier: string): ModuleResolution;
 	/** Full source text, or the text of the given node. */
 	getText(node?: Node): string;
 }
@@ -97,6 +105,8 @@ export interface RuleContext {
 export interface ProjectLoadResult {
 	files: SourceFileView[];
 	failures: FileLoadFailure[];
+	/** Config failures are coverage limitations, not failed source reads. */
+	resolutionFailures?: FileLoadFailure[];
 }
 
 /**
@@ -106,6 +116,9 @@ export interface ProjectLoadResult {
  */
 export interface ParserAdapter {
 	readonly name: string;
-	createProject(filePaths: string[]): ProjectLoadResult;
+	createProject(
+		filePaths: string[],
+		options?: { packageRoot: string },
+	): ProjectLoadResult;
 	positionOf(file: SourceFileView, pos: number): SourceFilePosition;
 }

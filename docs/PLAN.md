@@ -92,6 +92,12 @@ projects[] }`.
 | F022 | Eval corpus & precision gate | 6 | Done |
 | F023 | npm publish & README | 6 | Done |
 | F024 | Agent skill installer (`backend-doctor install`) | 4 | Done |
+| F026 | Audit remediation (A01–A05 and coverage/exit-code clarity; [spec](./specs/026-audit-remediation/spec.md), [design](./specs/026-audit-remediation/design.md), [verification](./specs/026-audit-remediation/tasks.md)) | 6 | Done |
+| F027 | Prisma 7 standard generated-client loader ([spec 027](./specs/027-prisma-generated-client-loader/spec.md); separately requested) | 5 | Draft spec |
+| F028 | Interactive console: progress, grouped issue browser, code details, copyable AI context, documentation links, local score and GitHub Actions setup ([spec 028](./specs/028-interactive-console/spec.md)) | 6 | Done |
+
+Spec 025 remains an unapproved GitBot integration draft; F025 is not yet added
+to this roadmap.
 
 ### Phase descriptions
 
@@ -175,16 +181,7 @@ Zero-intrusion: the app is started via `backend-doctor probe -- <start command>`
   a bad app with deliberate blocking.
 - **F023 Publish** — npm publish `backend-doctor`, README, rule docs generation script.
 
-## 5. Verification strategy
-
-- Every rule: valid/invalid fixtures + diagnostic snapshot tests (vitest), written
-  before implementation (TDD).
-- Engine/config/reporters/probe: integration tests on a mini project.
-- Evals: whole applications in CI; a rule is accepted only with zero false positives
-  on the good corpus.
-- JSON report: contract test of the schema; `schemaVersion` bump on breaking changes.
-
-## 6. Out of scope (for now)
+## 5. Out of scope (for now)
 
 LLM-assisted checks in the engine, GitLab CI (scaffold only), docs website,
 TypeORM/Mongoose rule packs.

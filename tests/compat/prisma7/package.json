@@ -1,0 +1,12 @@
+{
+	"name": "backend-doctor-prisma7-compat",
+	"private": true,
+	"type": "module",
+	"dependencies": {
+		"@prisma/client": "7.0.0",
+		"@prisma/adapter-better-sqlite3": "7.0.0"
+	},
+	"devDependencies": {
+		"prisma": "7.0.0"
+	}
+}

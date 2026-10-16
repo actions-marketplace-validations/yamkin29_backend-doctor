@@ -574,6 +574,9 @@ test("db: a client without $use degrades with one notice; http keeps recording",
 
 	const notices = res.stderr.match(/prisma client without \$use/g) ?? [];
 	expect(notices).toHaveLength(1);
+	expect(res.stderr).toContain(
+		"Prisma 7 prisma-client generated paths are unsupported",
+	);
 	expect(dbQueries(eventsPath)).toHaveLength(0);
 	expect(httpRequests(eventsPath).length).toBeGreaterThanOrEqual(2);
 }, 15000);

@@ -17,6 +17,12 @@ import { type LoadedTrace, loadTraceSession } from "../../runtime/load.js";
 import { buildRuntimeDiagnostics } from "../../runtime/merge.js";
 import { resolveScope } from "../../scope/resolve.js";
 import type { ResolvedScope, ScopeOption } from "../../scope/types.js";
+import type { ConsoleSession } from "../console/session.js";
+import {
+	loadConsole,
+	resolveConsoleMode,
+	terminalFacts,
+} from "../console-mode.js";
 
 export interface ScanCommandOptions {
 	format: ReportFormat;
@@ -28,6 +34,7 @@ export interface ScanCommandOptions {
 	file: string[];
 	/** Probe session directory to merge runtime findings from (spec 021). */
 	trace?: string;
+	interactive?: boolean;
 }
 
 const REGISTERED_RULE_IDS = new Set(
@@ -39,6 +46,11 @@ export async function scanCommand(
 	opts: ScanCommandOptions,
 ): Promise<number> {
 	const target = path.resolve(pathArg ?? process.cwd());
+	const mode = resolveConsoleMode(opts, terminalFacts());
+	if (mode.error) {
+		process.stderr.write(`${mode.error}\n`);
+		return 2;
+	}
 
 	// Flag-combination validation precedes any I/O (spec 015 AC-8).
 	if (opts.file.length > 0 && opts.scope !== "files") {
@@ -110,31 +122,78 @@ export async function scanCommand(
 		trace = loaded.trace;
 	}
 
-	const result = await runScan({
-		directory: target,
-		ignore: resolved.ignore.files,
-		config: resolved,
-		scope,
-	});
-	if (trace !== undefined) {
-		// Scope filtering (including `lines`) already ran inside the scan —
-		// runtime diagnostics are merged after it, so they survive every
-		// scope (spec 021 AC-10), then join the one global order.
-		result.diagnostics = sortDiagnostics(
-			[
-				...result.diagnostics,
-				...buildRuntimeDiagnostics({
-					findings: trace.findings,
-					findingsPath: trace.findingsPath,
-					sessionCwd: trace.sessionCwd,
-					scanRoot: target,
-				}),
-			],
-			target,
+	let session: ConsoleSession | undefined;
+	const presentationFailure = (error: unknown) => {
+		session?.dispose();
+		session = undefined;
+		process.stderr.write(
+			`Interactive console unavailable: ${(error as Error).message}\n`,
 		);
+	};
+	if (mode.enabled) {
+		try {
+			const consoleModule = await loadConsole();
+			session = consoleModule.startConsole({
+				target,
+				scanOptions: {
+					...opts,
+					config: opts.config ? path.resolve(opts.config) : undefined,
+					file: opts.file.map((file) => path.resolve(file)),
+					trace: opts.trace ? path.resolve(opts.trace) : undefined,
+				},
+			});
+		} catch (error) {
+			presentationFailure(error);
+		}
 	}
-	const doc = buildReport(result, trace?.provenance);
-	const output = getReporter(opts.format)(doc);
-	if (output.length > 0) process.stdout.write(output);
-	return exitCodeFor(doc);
+	try {
+		const result = await runScan(
+			{
+				directory: target,
+				ignore: resolved.ignore.files,
+				config: resolved,
+				scope,
+			},
+			session
+				? (stage) => {
+						try {
+							session?.stage(stage);
+						} catch (error) {
+							presentationFailure(error);
+						}
+					}
+				: undefined,
+		);
+		if (trace !== undefined) {
+			// Scope filtering (including `lines`) already ran inside the scan —
+			// runtime diagnostics are merged after it, so they survive every
+			// scope (spec 021 AC-10), then join the one global order.
+			result.diagnostics = sortDiagnostics(
+				[
+					...result.diagnostics,
+					...buildRuntimeDiagnostics({
+						findings: trace.findings,
+						findingsPath: trace.findingsPath,
+						sessionCwd: trace.sessionCwd,
+						scanRoot: target,
+					}),
+				],
+				target,
+			);
+		}
+		const doc = buildReport(result, trace?.provenance);
+		if (session) {
+			try {
+				await session.present(doc);
+				return exitCodeFor(doc);
+			} catch (error) {
+				presentationFailure(error);
+			}
+		}
+		const output = getReporter(opts.format)(doc);
+		if (output.length > 0) process.stdout.write(output);
+		return exitCodeFor(doc);
+	} finally {
+		session?.dispose();
+	}
 }
