@@ -8,7 +8,7 @@ resolved by adopting the recommendations (see spec.md → Open questions).
 | File | Change |
 |------|--------|
 | `package.json` | add `prepublishOnly`, `docs:rules` scripts; metadata (`author`, `repository`, `homepage`, `bugs`, `keywords`); replace `files: ["dist"]` with the explicit tarball list (T1–T2, T4) |
-| `LICENSE` | new — MIT text, copyright "Copyright (c) 2026 Aleksey Yamkin" (T3, static content) |
+| `LICENSE` | new — MIT text, copyright "Copyright (c) 2026 Alexey Yamkin" (T3, static content) |
 | `README.md` | new — the package front page; structure in D6 (T3, static content) |
 | `tests/unit/package-contract.test.ts` | new — pins the publish-relevant `package.json` fields and script chains exactly (T1, T2) |
 | `tests/e2e/pack.test.ts` | new — pins the exact `npm pack --dry-run --json` file list (T4) |

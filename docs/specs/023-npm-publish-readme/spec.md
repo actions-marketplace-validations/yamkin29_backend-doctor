@@ -204,7 +204,7 @@ runs the final `npm publish`**; (2) `dist/scripts/rule-docs.{js,d.ts}` are
 **ship** in the tarball; (4) metadata coordinates name the post-rename
 `yamkin29/backend-doctor` (the user renames the GitHub repo at or before
 publish); (5) publish `0.1.0` as-is, LICENSE copyright "Copyright (c) 2026
-Aleksey Yamkin", `author` "Aleksey Yamkin".
+Alexey Yamkin", `author` "Alexey Yamkin".
 
 1. **Who executes the final `npm publish`?** (a) I do everything up to and
    including the tarball verification; **you** run `npm publish` from your
@@ -232,7 +232,7 @@ Aleksey Yamkin", `author` "Aleksey Yamkin".
    recommended. (b) Current coordinates `yamkin29/Node-doctor`.
 5. **Version and identity.** (a) Publish `0.1.0` as-is (0.x honestly signals
    pre-1.0; all contracts already carry `schemaVersion`); LICENSE copyright
-   line "Copyright (c) 2026 Aleksey Yamkin"; `author` "Aleksey Yamkin" —
+   line "Copyright (c) 2026 Alexey Yamkin"; `author` "Alexey Yamkin" —
    recommended, provided you confirm you want that name public on npm.
    (b) Bump to `1.0.0` before the first publish. (c) A different
    copyright/author string — tell me the exact text.
