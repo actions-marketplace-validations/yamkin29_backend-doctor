@@ -465,7 +465,7 @@ describe("runScan security rules (AC-14, spec 007)", () => {
 				'import axios from "axios";',
 				'import _ from "lodash";',
 				"",
-				'const apiKey = "sk_live_9fK3pXwR7vTqzLm5Yh8Cd1BnJ2";',
+				'const apiKey = "synthetic-example-0123456789abcdef";',
 				"",
 				"export async function handle(req: {",
 				"\tbody: Record<string, string>;",

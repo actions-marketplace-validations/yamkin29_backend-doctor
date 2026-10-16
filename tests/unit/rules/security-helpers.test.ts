@@ -84,7 +84,7 @@ describe("secret-literal predicates (spec 007 T2)", () => {
 		expect(isSecretLiteral("abcdefghijklmnop")).toBe(true);
 		expect(isSecretLiteral("aaaaaaaaaaaaaaaa")).toBe(false);
 		expect(isSecretLiteral("abcdefghijk")).toBe(false);
-		expect(isSecretLiteral("sk_live_9fK3pXwR7vTqzLm5Yh8Cd1BnJ2")).toBe(true);
+		expect(isSecretLiteral("synthetic-example-0123456789abcdef")).toBe(true);
 		expect(isSecretLiteral("aaaa-bbbb-cccc-dddd")).toBe(false);
 	});
 

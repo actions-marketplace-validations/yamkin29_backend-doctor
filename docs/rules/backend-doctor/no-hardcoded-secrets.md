@@ -34,8 +34,8 @@ A variable declaration, class property, or object key matches when:
 ## Bad
 
 ```ts
-// ❌ anyone with the source has the production key
-const apiKey = "sk_live_9fK3pXwR7vTqzLm5Yh8Cd1BnJ2";
+// ❌ hardcoded credential; synthetic example value
+const apiKey = "synthetic-example-0123456789abcdef";
 ```
 
 ## Good
