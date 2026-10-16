@@ -251,6 +251,11 @@ normally, including its own network requests and database connections.
 
 ## For coding agents
 
+For a reusable scan → fix → verify workflow with a human PR handoff, see
+[Backend Doctor Fixer for GitBot](integrations/gitbot/README.md). The portable
+definition credits this project and the npm package; Marketplace submission is
+open for review as [GitBot Library PR #116](https://github.com/gitbot-hq/Library/pull/116).
+
 The package ships an agent skill — a small instruction file that teaches
 coding agents supporting the Agent Skills format to run a scoped scan after
 backend edits and read the findings correctly. Choose the agent to install it
